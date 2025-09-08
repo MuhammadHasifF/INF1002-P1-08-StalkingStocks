@@ -21,10 +21,10 @@ jobs:
         run: |
           if [ "$EVENT_NAME" = "pull_request" ]; then
             curl -s -X POST "https://api.telegram.org/bot8091548592:AAHhR-QoyXU_7GfQi97fjIJ_zd1STdB_FWY/sendMessage" \
-              -d chat_id=-1002716703405 \
+              -d chat_id=-1003023861977 \
               -d text="PR '$PR_TITLE' by $PR_USER was merged.\n$PR_URL"
           else
             curl -s -X POST "https://api.telegram.org/bot8091548592:AAHhR-QoyXU_7GfQi97fjIJ_zd1STdB_FWY/sendMessage" \
-              -d chat_id=-1002716703405 \
+              -d chat_id=-1003023861977 \
               -d text="New push to main branch by $ACTOR"
           fi
