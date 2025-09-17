@@ -20,13 +20,13 @@ This README serves as the central documentation for the **Stalking Stocks** proj
 
 ### Create and Activate a Virtual Environment
 
-```text
+```bash
 # Linux/macOS 
 python3 -m venv .venv
 source .venv/bin/activate 
 ```
 
-```text
+```powershell
 # Windows 
 python -m venv .venv
 .venv/bin/Activate.ps1 
@@ -34,7 +34,7 @@ python -m venv .venv
 
 ### Deactivate Virtual Environment
 
-```text
+```bash
 deactivate
 ```
 
