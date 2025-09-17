@@ -12,6 +12,40 @@ This README serves as the central documentation for the **Stalking Stocks** proj
 
 ---
 
+## 🛠️ Setup Guide
+
+### Prerequisites 
+- Python 3.9+ installed  
+- `pip` or `conda` for package management  
+
+### Create and Activate a Virtual Environment
+
+```bash
+# Linux/macOS 
+python3 -m venv .venv
+source .venv/bin/activate 
+```
+
+```powershell
+# Windows 
+python -m venv .venv
+.venv/bin/Activate.ps1 
+```
+
+### Deactivate Virtual Environment
+
+```bash
+deactivate
+```
+
+### Install Dependencies
+
+```bash
+python install -r requirements.txt
+```
+
+---
+
 ## 📊 Project Proposal  
 **Course:** INF1002 Programming Fundamentals  
 **Team ID:** P1-8  

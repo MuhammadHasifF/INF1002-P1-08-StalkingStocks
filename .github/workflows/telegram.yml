@@ -10,6 +10,9 @@ on:
 jobs:
   notify:
     runs-on: ubuntu-latest
+    env:
+      TELEGRAM_CHAT_ID: ${{ vars.TELEGRAM_CHAT_ID }}   # or secrets.TELEGRAM_CHAT_ID
+      TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
     steps:
       - name: Send Telegram message
         env:
@@ -20,8 +23,8 @@ jobs:
           ACTOR: ${{ github.actor }}
         run: |
           if [ "$EVENT_NAME" = "pull_request" ]; then
-            curl -s -X POST "https://api.telegram.org/bot8091548592:AAHhR-QoyXU_7GfQi97fjIJ_zd1STdB_FWY/sendMessage" \
-              -d chat_id=-1003023861977 \
+            curl -s -X POST "https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/sendMessage" \
+              -d chat_id="${TELEGRAM_CHAT_ID}" \
               -d text="PR '$PR_TITLE' by $PR_USER was merged.\n$PR_URL"
           else
             curl -s -X POST "https://api.telegram.org/bot8091548592:AAHhR-QoyXU_7GfQi97fjIJ_zd1STdB_FWY/sendMessage" \
