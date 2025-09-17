@@ -1,0 +1,3 @@
+pandas==3.2.3
+yfinance==0.2.65
+streamlit==1.49.1
