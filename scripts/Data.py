@@ -5,7 +5,7 @@ import yfinance as yf
 #Pandas is a tool for data tables to read clean and save them
 #Numpy is useful for us to do mathamatical computations and handling NaN values
 #yfinance is what we are using to pull Yahoo Finance Data, and its easier to use than things like AlphaVantage which need API Keys
-
+#test
 sectors = {
     "Tech": ["AAPL", "MSFT", "NVDA"],
     "Finance": ["JPM", "BAC", "MA"],
