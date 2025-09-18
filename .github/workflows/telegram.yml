@@ -10,9 +10,6 @@ on:
 jobs:
   notify:
     runs-on: ubuntu-latest
-    env:
-      TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}   # or secrets.TELEGRAM_CHAT_ID
-      TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
     steps:
       - name: Send Telegram message
         env:
