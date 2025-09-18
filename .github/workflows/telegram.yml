@@ -16,6 +16,8 @@ jobs:
     steps:
       - name: Send Telegram message
         env:
+          TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
+          TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
           EVENT_NAME: ${{ github.event_name }}
           PR_TITLE: ${{ github.event.pull_request.title }}
           PR_USER: ${{ github.event.pull_request.user.login }}
