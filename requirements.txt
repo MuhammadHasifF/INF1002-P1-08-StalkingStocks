@@ -1,3 +1,6 @@
+numpy==2.3.3
 pandas==2.3.2
-yfinance==0.2.65
+pydantic==2.11.9
+pytest==8.4.2
 streamlit==1.49.1
+yfinance==0.2.65
