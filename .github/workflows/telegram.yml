@@ -1,4 +1,4 @@
-name: Telegram Notification (Debug)
+name: Telegram Notification
 
 on:
   push:
@@ -22,10 +22,10 @@ jobs:
           PR_URL: ${{ github.event.pull_request.html_url }}
           ACTOR: ${{ github.actor }}
         run: |
-          echo "Event name: $EVENT_NAME"
-          echo "Actor: $ACTOR"
-          echo "PR title: $PR_TITLE"
-          echo "PR user: $PR_USER"
-          echo "PR URL: $PR_URL"
-          echo "Length of TELEGRAM_CHAT_ID: ${#TELEGRAM_CHAT_ID}"
-          echo "Length of TELEGRAM_BOT_TOKEN: ${#TELEGRAM_BOT_TOKEN}"
+          run: | 
+            if [ "$EVENT_NAME" = "pull_request" ]; then curl -s -X POST "https://api.telegram.org/bot${#TELEGRAM_BOT_TOKEN}/sendMessage" \
+            -d chat_id=${#TELEGRAM_CHAT_ID} \
+            -d text="PR '$PR_TITLE' by $PR_USER was merged.\n$PR_URL" else curl -s -X POST "https://api.telegram.org/bot${#TELEGRAM_BOT_TOKEN}/sendMessage" \
+            -d chat_id=${#TELEGRAM_CHAT_ID} \
+            -d text="New push to main branch by $ACTOR" 
+          fi
