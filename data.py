@@ -1,9 +1,9 @@
 
 import pandas as pd
 import numpy as np
-import yfinance as yf
+import yfinance as yf#
 
-#Defining sectors and tickers
+# Defining sectors and tickers
 #Using a dictionary as it is easier to keep sector context, and can flatten into a list
 # = to efficiency as can download
 sectors = {
@@ -198,4 +198,5 @@ frames = {
 
 # Quick preview
 close_df.head()
+
 
