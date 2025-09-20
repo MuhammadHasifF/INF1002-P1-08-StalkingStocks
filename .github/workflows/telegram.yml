@@ -23,11 +23,11 @@ jobs:
           ACTOR: ${{ github.actor }}
         run: |
           if [ "$EVENT_NAME" = "pull_request" ]; then
-            curl -s -X POST "https://api.telegram.org/bot\"$TELEGRAM_BOT_TOKEN\"/sendMessage" \
+            curl -s -X POST "https://api.telegram.org/bot$TELEGRAM_BOT_TOKEN/sendMessage" \
               -d chat_id="$TELEGRAM_CHAT_ID" \
               -d text="PR '$PR_TITLE' by $PR_USER was merged.\n$PR_URL"
           else
-            curl -s -X POST "https://api.telegram.org/bot\"$TELEGRAM_BOT_TOKEN\"/sendMessage" \
+            curl -s -X POST "https://api.telegram.org/bot$TELEGRAM_BOT_TOKEN/sendMessage" \
               -d chat_id="$TELEGRAM_CHAT_ID" \
               -d text="New push to main branch by $ACTOR"
           fi
