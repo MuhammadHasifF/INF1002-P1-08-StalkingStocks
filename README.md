@@ -35,26 +35,43 @@ deactivate
 python install -r requirements.txt
 ```
 
+### Starting the App
+
+```bash
+cd app/
+python3 main.py
+```
+
+> ![NOTE]
+> Streamlit hasn't been implmented yet. So this is just a way to test/experiment
+> with any functionalities.
+
 ## Project Structure
 
 ```bash
 .
+├── app
+│   ├── main.py             # entry point of our application
+│   ├── constants           # domain-specific constants
+│   │   ├── __init__.py
+│   │   └── sectors.py
+│   ├── models              # data models live here
+│   │   ├── __init__.py
+│   │   └── base.py
+│   ├── services            # business logic (interfacing with yfinance, APIs)
+│   │   ├── __init__.py
+│   │   ├── core.py
+│   │   ├── data.py
+│   │   └── finance.py
+│   └── utils               # helper functions/utilities
+│       ├── __init__.py
+│       └── helpers.py
+├── tests                   # tests go here
+│   └── ... 
+├── docs
+│   ├── Project Proposal.pdf
+│   ├── Project Specifications and Rubrics.pdf
+│   └── System Design.pdf
 ├── README.md
-├── requirements.txt
-└── stalking-stocks
-    ├── main.py             # entry point of our application
-    ├── constants           # domain-specific constants
-    │   ├── __init__.py
-    │   └── sectors.py
-    ├── models              # data models live here
-    │   ├── __init__.py
-    │   └── base.py
-    ├── services            # business logic (interfacing with yfinance, APIs)
-    │   ├── __init__.py
-    │   ├── core.py
-    │   ├── data.py
-    │   └── finance.py
-    └── utils               # helper functions/utilities
-        ├── __init__.py
-        └── helpers.py
+└── requirements.txt
 ```
