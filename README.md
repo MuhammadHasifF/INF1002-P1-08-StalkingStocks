@@ -42,7 +42,7 @@ cd app/
 python3 main.py
 ```
 
-> ![NOTE]
+> [!NOTE]
 > Streamlit hasn't been implmented yet. So this is just a way to test/experiment
 > with any functionalities.
 
