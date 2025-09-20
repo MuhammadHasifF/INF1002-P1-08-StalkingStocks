@@ -1,4 +1,4 @@
-name: Telegram Notification
+name: Telegram Notification (Debug)
 
 on:
   push:
@@ -11,8 +11,8 @@ jobs:
   notify:
     runs-on: ubuntu-latest
     steps:
-      - name: Send Telegram message
-      - shell: bash
+      - name: Debug secrets and env
+        shell: bash
         env:
           TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
           TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
@@ -22,4 +22,10 @@ jobs:
           PR_URL: ${{ github.event.pull_request.html_url }}
           ACTOR: ${{ github.actor }}
         run: |
-          echo "Secrets loaded? ${#TELEGRAM_BOT_TOKEN}"
+          echo "Event name: $EVENT_NAME"
+          echo "Actor: $ACTOR"
+          echo "PR title: $PR_TITLE"
+          echo "PR user: $PR_USER"
+          echo "PR URL: $PR_URL"
+          echo "Length of TELEGRAM_CHAT_ID: ${#TELEGRAM_CHAT_ID}"
+          echo "Length of TELEGRAM_BOT_TOKEN: ${#TELEGRAM_BOT_TOKEN}"
