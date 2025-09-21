@@ -16,21 +16,8 @@ Classes:
     Ticker: Represents an individual stock with relevant financial attributes.
 """
 
+from pandas import DataFrame
 from pydantic import BaseModel
-
-
-class Industry(BaseModel):
-    """Represents an industry and its top-performing companies."""
-
-    top_performers: list[str]
-
-
-class Sector(BaseModel):
-    """Represents a market sector containing multiple industries."""
-
-    key: str
-    name: str
-    industries: list[Industry]
 
 
 class Ticker(BaseModel):
@@ -42,3 +29,18 @@ class Ticker(BaseModel):
     price: float
     sector: str
     industry: str
+    # data: DataFrame
+
+
+class Industry(BaseModel):
+    """Represents an industry and its top-performing companies."""
+
+    top_performers: list[Ticker]
+
+
+class Sector(BaseModel):
+    """Represents a market sector containing multiple industries."""
+
+    key: str
+    name: str
+    industries: list[Industry]
