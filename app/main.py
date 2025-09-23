@@ -11,7 +11,6 @@ Note:
 import streamlit as st
 from services.finance import get_sector_data, get_sectors, get_industry_data, get_ticker_data, get_ticker_info
 from utils.helpers import timer
-from tqdm import tqdm
 
 @timer
 def main() -> None:
