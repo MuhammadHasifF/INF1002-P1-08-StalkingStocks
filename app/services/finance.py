@@ -16,57 +16,49 @@ from typing import Any
 
 import yfinance as yf
 from constants.sectors import SECTORS
-from models.base import Ticker
-from schemas.market import MarketData
-from utils.helpers import timer, yf_ticker_to_model
+from models.base import Industry, Sector, Ticker
+from schemas.dataframe import MarketData
+from utils.helpers import (timer, yf_industry_to_model, yf_sector_to_model,
+                           yf_ticker_to_model)
 
 
-@timer
-def load_mapping() -> dict[str, list[str]]:
+def get_sectors() -> list[str]:
     """
-    Loads sector and industry data.
-
-    Returns:
-        A dictionary mapping sectors with their relevant industries.
-    """
-    sector_to_industry_mapping = {sector: [] for sector in SECTORS}
-
-    for sector in SECTORS:
-        industry_list = get_industries(sector)
-        sector_to_industry_mapping[sector] = industry_list
-
-    return sector_to_industry_mapping
-
-
-@timer
-def get_industries(sector_key: str) -> list[str]:
-    """Retrieves a list of industries within a domain sector.
 
     Args:
-        sector_key (str): sector key from yfinance API.
+        -
 
     Returns:
-        A list of industries within a sector.
+        -
     """
-    sector = yf.Sector(sector_key)
-    industries = sector.industries
-    return list(industries.index)
+    return SECTORS
 
 
-@timer
-def get_top_performers_by_industry(industry: str) -> list[str]:
+def get_sector_data(sector_key: str) -> Sector:
     """
-    Retrieves an industries top performers (at most 5).
+    Returns data on a single domain sector.
 
     Args:
-        industry (str): Industry key as specified in yfinance API
+        -
 
     Returns:
-        A list of tickers of top performing companies
+        -
     """
-    industry_data = yf.Industry(industry)
-    top_performers = industry_data.top_performing_companies
-    return list(top_performers.index) if top_performers is not None else []
+    data = yf_sector_to_model(key=sector_key)
+    return data
+
+
+def get_industry_data(industry_key: str) -> Industry:
+    """
+
+    Args:
+        -
+
+    Returns:
+        -
+    """
+    data = yf_industry_to_model(key=industry_key)
+    return data
 
 
 @timer
@@ -112,12 +104,9 @@ def get_ticker_data(ticker_symbols: str | list[str], **kwargs: Any) -> MarketDat
     # Handle single vs multi-ticker cases:
     if isinstance(ticker_symbols, str):
         data.columns = data.columns.droplevel(1)
-        validated = MarketData.validate(data)
     else:
-        print("multplie tickers coming right up!")
-    #     # Multi-ticker case: yfinance gives column MultiIndex
-    #     # Collapse it into flat columns for validation
-    #     data = data.stack(level=0).rename_axis(["Date", "Ticker"]).reset_index()
-    #     validated = MarketData.validate(data)
+        # Collapse it into flat columns for validation
+        data = data.stack(level=0).rename_axis(["Date", "Ticker"]).reset_index()
 
+    validated = MarketData.validate(data)
     return validated
