@@ -58,6 +58,9 @@ python3 main.py
 │   ├── models              # data models live here
 │   │   ├── __init__.py
 │   │   └── base.py
+│   ├── schemas             # dataframe models live here
+│   │   ├── __init__.py
+│   │   └── dataframes.py
 │   ├── services            # business logic (interfacing with yfinance, APIs)
 │   │   ├── __init__.py
 │   │   ├── core.py
@@ -67,7 +70,7 @@ python3 main.py
 │       ├── __init__.py
 │       └── helpers.py
 ├── tests                   # tests go here
-│   └── ... 
+│   └── ...
 ├── docs
 │   ├── Project Proposal.pdf
 │   ├── Project Specifications and Rubrics.pdf

@@ -7,30 +7,20 @@ These models can be used for data validation, serialization, and
 interfacing with APIs or other data sources.
 
 Notes:
-    This module is experimental and may change in future releases.
-    API and data model structures are not yet finalized.
+    - Certain information fields from yfinance classes are not available, 
+    to handle this, we allow NoneTypes as value replacements.
 
 Classes:
-    Industry: Represents an industry and its top-performing companies.
+    Industry: Represents an industry and its top performing and growing companies.
     Sector: Represents a market sector containing multiple industries.
     Ticker: Represents an individual stock with relevant financial attributes.
 """
 
+from typing import Any
+
+from pandera.typing import DataFrame
 from pydantic import BaseModel
-
-
-class Industry(BaseModel):
-    """Represents an industry and its top-performing companies."""
-
-    top_performers: list[str]
-
-
-class Sector(BaseModel):
-    """Represents a market sector containing multiple industries."""
-
-    key: str
-    name: str
-    industries: list[Industry]
+from schemas.dataframe import TopGrowing, TopPerforming
 
 
 class Ticker(BaseModel):
@@ -38,7 +28,26 @@ class Ticker(BaseModel):
 
     symbol: str
     name: str
-    market_cap: float
-    price: float
-    sector: str
-    industry: str
+    market_cap: float | None
+    price: float | None
+    sector: str | None
+    industry: str | None
+
+
+class Industry(BaseModel):
+    """Represents an industry and its top-performing companies."""
+
+    top_performing: DataFrame[TopPerforming]
+    top_growing: DataFrame[TopGrowing]
+
+
+class Sector(BaseModel):
+    """Represents a market sector containing multiple industries."""
+
+    key: str
+    name: str
+    overview: dict[str, Any]
+    top_companies: list[Ticker]
+    top_etfs: dict[str, str]
+    top_mutual_funds: dict[str, str | None]
+    industries: list[str]
