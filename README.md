@@ -60,7 +60,7 @@ python3 main.py
 │   │   └── base.py
 │   ├── schemas             # dataframe models live here
 │   │   ├── __init__.py
-│   │   └── market.py
+│   │   └── dataframes.py
 │   ├── services            # business logic (interfacing with yfinance, APIs)
 │   │   ├── __init__.py
 │   │   ├── core.py
