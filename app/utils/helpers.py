@@ -16,7 +16,7 @@ from typing import Callable, ParamSpec, TypeVar
 
 import pandas as pd
 import yfinance as yf
-from models.base import Ticker
+from models.base import Industry, Sector, Ticker
 
 
 def n_year_window(n: int, timezone: str = "Asia/Singapore") -> tuple[date, date]:
@@ -64,17 +64,63 @@ def timer(func: Callable[P, R]) -> Callable[P, R]:
 
 
 def yf_ticker_to_model(symbol: str) -> Ticker:
-    """Converts a yfinance Ticker into a structured Ticker model."""
-    yf_ticker = yf.Ticker(symbol)
+    """
+    Converts a yfinance Ticker into a structured Ticker model.
+
+    Note:
+        Certain ticker information is unavailable. To handle this we use
+        the dictionary get() method which returns None when a key does not exist.
+
+    Args:
+        symbol (str): Ticker symbol
+
+    Return:
+        A Ticker data model.
+    """
+    yf_ticker = yf.Ticker(ticker=symbol)
     info = yf_ticker.info
 
     return Ticker(
         symbol=symbol,
         name=info["shortName"],
-        market_cap=info["marketCap"],
-        price=info["currentPrice"],
-        sector=info["sector"],
-        industry=info["industry"],
+        market_cap=info.get("marketCap"),
+        price=info.get("currentPrice"),
+        sector=info.get("sector"),
+        industry=info.get("industry"),
+    )
+
+
+def yf_industry_to_model(key: str):
+    """Converts a yfinance Industry into a structured Industry model."""
+    yf_industry = yf.Industry(key=key)
+
+    top_performing = yf_industry.top_performing_companies
+    top_growing = yf_industry.top_growth_companies
+
+    top_performing.columns = (
+        top_performing.columns.str.strip().str.lower().str.replace(" ", "_")
+    )
+    top_growing.columns = (
+        top_growing.columns.str.strip().str.lower().str.replace(" ", "_")
+    )
+
+    return Industry(top_performing=top_performing, top_growing=top_growing)
+
+
+def yf_sector_to_model(key: str) -> Sector:
+    """Converts a yfinance Sector into a structured Sector model."""
+    yf_sector = yf.Sector(key=key)
+
+    return Sector(
+        key=key,
+        name=yf_sector.name,
+        overview=yf_sector.overview,
+        top_companies=[
+            yf_ticker_to_model(tkr) for tkr in yf_sector.top_companies.index
+        ],
+        top_etfs=yf_sector.top_etfs,
+        top_mutual_funds=yf_sector.top_mutual_funds,
+        industries=list(yf_sector.industries.index),
     )
 
 
