@@ -28,6 +28,7 @@ class TopPerforming(DataFrameModel):
     target_price: Series[float] = Field(nullable=True)
 
     class Config:
+        coerce = True
         strict = False  # future proof toallow extra columns
 
 
@@ -39,6 +40,7 @@ class TopGrowing(DataFrameModel):
     growth_estimate: Series[float] = Field(nullable=True)
 
     class Config:
+        coerce = True
         strict = False  # future proof toallow extra columns
 
 
