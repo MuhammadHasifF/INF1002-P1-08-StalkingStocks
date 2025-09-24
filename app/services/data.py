@@ -7,7 +7,3 @@ ingestion for each feature within the application.
 Notes:
     -
 """
-
-import pandas as pd
-
-
