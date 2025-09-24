@@ -27,12 +27,17 @@ class Ticker(BaseModel):
     """Represents an individual stock with financial attributes."""
 
     symbol: str
-    name: str
+    display_name: str | None
+    long_name: str | None
+    short_name: str | None
     market_cap: float | None
     price: float | None
     sector: str | None
     industry: str | None
-
+    description: str | None
+    dividend_rate: float | None
+    dividend_yield: float | None
+    volume: int | None
 
 class Industry(BaseModel):
     """Represents an industry and its top-performing companies."""
