@@ -19,6 +19,11 @@ import yfinance as yf
 from models.base import Industry, Sector, Ticker
 
 
+def has_null_values(df: pd.DataFrame) -> bool:
+    """Checks for null values"""
+    return df.isnull().values.any()
+
+
 def n_year_window(n: int, timezone: str = "Asia/Singapore") -> tuple[date, date]:
     """
     Compute a rolling n-year (start, end) window ending at the current date.
@@ -33,34 +38,6 @@ def n_year_window(n: int, timezone: str = "Asia/Singapore") -> tuple[date, date]
     end_ts: pd.Timestamp = pd.Timestamp.now(tz=timezone).normalize()
     start_ts: pd.Timestamp = end_ts - pd.DateOffset(years=n)
     return start_ts.date(), end_ts.date()
-
-
-P = ParamSpec("P")
-R = TypeVar("R")
-
-
-def timer(func: Callable[P, R]) -> Callable[P, R]:
-    """
-    Measures wall clock-time of two points.
-
-    Args:
-        func (Callable): Function to be timed.
-
-    Returns:
-        A wrapped function that behaves like `func` but prints the time
-        it took to execute.
-    """
-
-    @wraps(func)
-    def wrapper(*args: P.args, **kwargs: P.kwargs) -> R:
-        """Wrapper function that times the execution of `func`."""
-        start = time()
-        output = func(*args, **kwargs)
-        end = time()
-        print(f"[INFO] {func.__name__} took {end - start:.6f} seconds.")
-        return output
-
-    return wrapper
 
 
 def yf_ticker_to_model(symbol: str) -> Ticker:
@@ -82,11 +59,17 @@ def yf_ticker_to_model(symbol: str) -> Ticker:
 
     return Ticker(
         symbol=symbol,
-        name=info["shortName"],
+        display_name=info.get("displayName"),
+        long_name=info.get("longName"),
+        short_name=info.get("shortName"),
         market_cap=info.get("marketCap"),
         price=info.get("currentPrice"),
         sector=info.get("sector"),
         industry=info.get("industry"),
+        description=info.get("longBusinessSummary"),
+        dividend_rate=info.get("dividendRate"),
+        dividend_yield=info.get("dividendYield"),
+        volume=info.get("volume"),
     )
 
 
@@ -132,3 +115,31 @@ def yf_download_to_model(
     )
 
     return data
+
+
+P = ParamSpec("P")
+R = TypeVar("R")
+
+
+def timer(func: Callable[P, R]) -> Callable[P, R]:
+    """
+    Measures wall clock-time of two points.
+
+    Args:
+        func (Callable): Function to be timed.
+
+    Returns:
+        A wrapped function that behaves like `func` but prints the time
+        it took to execute.
+    """
+
+    @wraps(func)
+    def wrapper(*args: P.args, **kwargs: P.kwargs) -> R:
+        """Wrapper function that times the execution of `func`."""
+        start = time()
+        output = func(*args, **kwargs)
+        end = time()
+        print(f"[INFO] {func.__name__} took {end - start:.6f} seconds.")
+        return output
+
+    return wrapper

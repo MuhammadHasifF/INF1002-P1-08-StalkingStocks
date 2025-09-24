@@ -15,17 +15,12 @@ A financial analysis application for beginner investors.
 # Linux/macOS 
 python3 -m venv .venv
 source .venv/bin/activate 
-```
 
-```powershell
 # Windows 
 python -m venv .venv
 .venv/bin/Activate.ps1 
-```
 
-### Deactivate Virtual Environment
-
-```bash
+# To deactive environment
 deactivate
 ```
 
@@ -38,13 +33,27 @@ python install -r requirements.txt
 ### Starting the App
 
 ```bash
-cd app/
-python3 main.py
+streamlit run app/main.py
 ```
 
-> [!NOTE]
-> Streamlit hasn't been implmented yet. So this is just a way to test/experiment
-> with any functionalities.
+### Testing
+
+```bash
+# run all tests
+pytest
+
+# run tests in a specific file
+pytest path/to/your_test_file.py
+
+# run tests by keyword
+pytest -k "keyword_to_match"
+
+# run test on specific function
+pytest path/to/your_test_file.py::test_function_name
+
+# to get verbose output during tests
+pytest -v
+```
 
 ## Project Structure
 
