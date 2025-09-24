@@ -58,7 +58,8 @@ def get_industry_data(industry_key: str) -> Industry:
         -
     """
     data = yf_industry_to_model(key=industry_key)
-    return data
+    validated = Industry.validate(data)
+    return validated 
 
 
 @timer
@@ -104,9 +105,11 @@ def get_ticker_data(ticker_symbols: str | list[str], **kwargs: Any) -> MarketDat
     # Handle single vs multi-ticker cases:
     if isinstance(ticker_symbols, str):
         data.columns = data.columns.droplevel(1)
-    else:
-        # Collapse it into flat columns for validation
-        data = data.stack(level=0).rename_axis(["Date", "Ticker"]).reset_index()
+        data = MarketData.validate(data)
 
-    validated = MarketData.validate(data)
-    return validated
+    # not sure how i want to handle multi-indexed dataframes yet
+    # else:
+    #     # Collapse it into flat columns for validation
+    #     data = data.stack(level=0).rename_axis(["Date", "Ticker"]).reset_index()
+
+    return data 
