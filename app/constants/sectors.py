@@ -6,10 +6,12 @@ the yfinance API. The `SECTORS` list can be used when filtering or querying
 stock data by sector.
 
 Attributes:
-    SECTORS (List[str]): A list of sector names recognized by yfinance.
+    SECTORS (Sequence[str]): A list of sector names recognized by yfinance.
 """
 
-SECTORS: list[str] = [
+from typing import Sequence
+
+SECTORS: Sequence[str] = (
     "basic-materials",
     "communication-services",
     "consumer-cyclical",
@@ -21,4 +23,4 @@ SECTORS: list[str] = [
     "real-estate",
     "technology",
     "utilities",
-]
+)

@@ -12,54 +12,58 @@ The module is intended for data ingestion, preprocessing, and real-time querying
 of financial data to support dashboards, analytics, and reporting features.
 """
 
-from typing import Any
+from typing import Any, Sequence
 
+import pandas as pd
 import yfinance as yf
 from constants.sectors import SECTORS
 from models.base import Industry, Sector, Ticker
-from schemas.dataframe import MarketData
+from schemas.dataframe import MarketData, TopGrowing, TopPerforming
 from utils.helpers import (timer, yf_industry_to_model, yf_sector_to_model,
                            yf_ticker_to_model)
 
 
-def get_sectors() -> list[str]:
-    """
-
-    Args:
-        -
-
-    Returns:
-        -
-    """
+def get_sectors() -> Sequence[str]:
+    """Returns a read-only iterable of sector names."""
     return SECTORS
 
 
+@timer
 def get_sector_data(sector_key: str) -> Sector:
     """
     Returns data on a single domain sector.
 
     Args:
-        -
+        sector_key (str): Sector key to be queried
 
     Returns:
-        -
+        A Sector data model containing sector information.
     """
-    data = yf_sector_to_model(key=sector_key)
+    data: Sector = yf_sector_to_model(key=sector_key)
     return data
 
 
+@timer
 def get_industry_data(industry_key: str) -> Industry:
     """
+    Returns data on a single industry.
+
+    Note:
+        - A single sector contains multiple industries.
+        - Each industry contains multiple company tickers.
 
     Args:
-        -
+        sector_key (str): Sector key to be queried
 
     Returns:
-        -
+        A Sector data model containing sector information.
     """
-    data = yf_industry_to_model(key=industry_key)
-    validated = Industry.validate(data)
-    return validated 
+    data: Industry = yf_industry_to_model(key=industry_key)
+
+    data.top_performing = TopPerforming.validate(data.top_performing)
+    data.top_growing = TopGrowing.validate(data.top_growing)
+
+    return data
 
 
 @timer
@@ -78,12 +82,12 @@ def get_ticker_info(ticker_symbol: str, **kwargs: Any) -> Ticker:
         Ticker Data Model
     """
     kwargs.pop("symbol", None)  # remove if exists
-    ticker = yf_ticker_to_model(symbol=ticker_symbol, **kwargs)
+    ticker: Ticker = yf_ticker_to_model(symbol=ticker_symbol, **kwargs)
     return ticker
 
 
 @timer
-def get_ticker_data(ticker_symbols: str | list[str], **kwargs: Any) -> MarketData:
+def get_ticker_data(ticker_symbols: str | list[str], **kwargs: Any) -> pd.DataFrame:
     """
     Retrieve historical market data for one or multiple ticker symbols using
     Yahoo Finance.
@@ -100,7 +104,7 @@ def get_ticker_data(ticker_symbols: str | list[str], **kwargs: Any) -> MarketDat
         from yfinance.
     """
     kwargs.pop("tickers", None)  # remove if exists
-    data = yf.download(tickers=ticker_symbols, **kwargs)
+    data: pd.DataFrame = yf.download(tickers=ticker_symbols, **kwargs)
 
     # Handle single vs multi-ticker cases:
     if isinstance(ticker_symbols, str):
@@ -112,4 +116,4 @@ def get_ticker_data(ticker_symbols: str | list[str], **kwargs: Any) -> MarketDat
     #     # Collapse it into flat columns for validation
     #     data = data.stack(level=0).rename_axis(["Date", "Ticker"]).reset_index()
 
-    return data 
+    return data
