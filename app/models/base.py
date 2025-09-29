@@ -20,7 +20,7 @@ from typing import Any
 
 from pandera.typing import DataFrame
 from pydantic import BaseModel
-from schemas.dataframe import TopGrowing, TopPerforming
+from ..schemas.dataframe import TopGrowing, TopPerforming
 
 
 class Ticker(BaseModel):
@@ -52,7 +52,7 @@ class Sector(BaseModel):
     key: str
     name: str
     overview: dict[str, Any]
-    top_companies: list[Ticker]
+    top_companies: list[str]
     top_etfs: dict[str, str]
     top_mutual_funds: dict[str, str | None]
     industries: list[str]

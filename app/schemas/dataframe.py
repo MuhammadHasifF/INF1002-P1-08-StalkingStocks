@@ -10,13 +10,16 @@ Notes:
     describe data validation structures.
 
 Classes:
-    TopPerforming: - 
-    TopGrowing: -
-    MarketData: -
+    TopPerforming: Represents dataframe schema for top performing companies.
+    TopGrowing: Represents dataframe schema for top growth companies.
+    MarketData: Represents dataframe schema for stock data.
 """
 
+from typing import TypeAlias
+
+from pandera.dtypes import DateTime
 from pandera.pandas import DataFrameModel, Field
-from pandera.typing import Series
+from pandera.typing import DataFrame, Series
 
 
 class TopPerforming(DataFrameModel):
@@ -44,15 +47,34 @@ class TopGrowing(DataFrameModel):
         strict = False  # future proof toallow extra columns
 
 
-class MarketData(DataFrameModel):
+class SingleStockData(DataFrameModel):
     """Schema for validating historical market price and volume data."""
 
-    Close: Series[float]
-    High: Series[float]
-    Low: Series[float]
-    Open: Series[float]
-    Volume: Series[int]
+    close: Series[float] = Field(alias="Close")
+    high: Series[float] = Field(alias="High")
+    low: Series[float] = Field(alias="Low")
+    open: Series[float] = Field(alias="Open")
+    volume: Series[int] = Field(alias="Volume")
 
     class Config:
         coerce = True
         strict = False  # allow extra columns if yfinance adds fields
+
+
+class MultipleStockData(DataFrameModel):
+    """Schema for validating multiple historical market prices and volume data."""
+
+    date: Series[DateTime] = Field(alias="Date", nullable=False)
+    ticker: Series[str] = Field(alias="Ticker", nullable=False)
+    close: Series[float] = Field(alias="Close")
+    high: Series[float] = Field(alias="High")
+    low: Series[float] = Field(alias="Low")
+    open: Series[float] = Field(alias="Open")
+    volume: Series[int] = Field(alias="Volume")
+
+    class Config:
+        coerce = True
+        strict = False  # allow extra columns if yfinance adds fields
+
+
+StockDataFrame: TypeAlias = DataFrame[SingleStockData] | DataFrame[MultipleStockData]
