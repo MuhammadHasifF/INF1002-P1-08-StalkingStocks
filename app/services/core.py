@@ -10,7 +10,7 @@ Notes:
 
 import numpy as np
 import pandas as pd
-from utils.helpers import timer
+from ..utils.helpers import timer
 
 
 @timer
@@ -55,8 +55,8 @@ def compute_streak(close: pd.Series) -> tuple[int, int]:
     gid_neg: np.ndarray = (neg != neg.shift(fill_value=False)).cumsum()
 
     # for each contiguous run label, sum the mask
-    longest_pos: int = pos.groupby(gid_pos).sum().max() or 0
-    longest_neg: int = neg.groupby(gid_neg).sum().max() or 0
+    longest_pos: int = int(pos.groupby(gid_pos).sum().max()) or 0
+    longest_neg: int = int(neg.groupby(gid_neg).sum().max()) or 0
 
     return longest_pos, longest_neg
 

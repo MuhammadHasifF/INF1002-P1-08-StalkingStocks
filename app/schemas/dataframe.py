@@ -15,8 +15,11 @@ Classes:
     MarketData: Represents dataframe schema for stock data.
 """
 
+from typing import TypeAlias
+
+from pandera.dtypes import DateTime
 from pandera.pandas import DataFrameModel, Field
-from pandera.typing import Series
+from pandera.typing import DataFrame, Series
 
 
 class TopPerforming(DataFrameModel):
@@ -44,25 +47,34 @@ class TopGrowing(DataFrameModel):
         strict = False  # future proof toallow extra columns
 
 
-class MarketData(DataFrameModel):
+class SingleStockData(DataFrameModel):
     """Schema for validating historical market price and volume data."""
 
-    close: Series[float] = Field(alias='Close')
-    high: Series[float] = Field(alias='High')
-    low: Series[float] = Field(alias='Low')
-    open: Series[float] = Field(alias='Open')
-    volume: Series[int] = Field(alias='Volume')
+    close: Series[float] = Field(alias="Close")
+    high: Series[float] = Field(alias="High")
+    low: Series[float] = Field(alias="Low")
+    open: Series[float] = Field(alias="Open")
+    volume: Series[int] = Field(alias="Volume")
 
     class Config:
         coerce = True
         strict = False  # allow extra columns if yfinance adds fields
 
 
-class SingleStockData(DataFrameModel):
-    """Schema for validating historical market price and volume data."""
-    pass
-
-
 class MultipleStockData(DataFrameModel):
-    """Schema for validating historical (multi-indexed) market price and volume data."""
-    pass
+    """Schema for validating multiple historical market prices and volume data."""
+
+    date: Series[DateTime] = Field(alias="Date", nullable=False)
+    ticker: Series[str] = Field(alias="Ticker", nullable=False)
+    close: Series[float] = Field(alias="Close")
+    high: Series[float] = Field(alias="High")
+    low: Series[float] = Field(alias="Low")
+    open: Series[float] = Field(alias="Open")
+    volume: Series[int] = Field(alias="Volume")
+
+    class Config:
+        coerce = True
+        strict = False  # allow extra columns if yfinance adds fields
+
+
+StockDataFrame: TypeAlias = DataFrame[SingleStockData] | DataFrame[MultipleStockData]
