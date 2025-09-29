@@ -5,5 +5,3 @@ pytest==8.4.2
 streamlit==1.49.1
 yfinance==0.2.65
 pandera==0.26.1
-matplotlib==3.9.2
-plotly==5.24.1
