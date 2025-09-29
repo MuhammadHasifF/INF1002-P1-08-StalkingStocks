@@ -30,10 +30,11 @@ jobs:
           pip install pytest
 
       - name: Run tests
+        working-directory: ${{ github.workspace }}
         run: |
           if [[ "$RUNNER_OS" == "macOS" ]]; then
-            python3 -m pytest
+            python3 -m pytest .
           else
-            python -m pytest
+            python -m pytest .
           fi
         shell: bash
