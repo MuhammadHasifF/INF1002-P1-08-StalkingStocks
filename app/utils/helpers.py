@@ -9,15 +9,21 @@ processing, and analysis workflows. Additional helper functions may be added
 as the application evolves.
 """
 
+import logging
 from datetime import date
 from functools import wraps
-from time import time
+from time import perf_counter
 from typing import Any, Callable, ParamSpec, TypeVar
 
 import pandas as pd
 import yfinance as yf
 
 from ..models.base import Industry, Sector, Ticker
+
+# Configure logging
+logging.basicConfig(
+    level=logging.INFO, format="%(asctime)s - %(message)s", datefmt="%Y-%m-%d %H:%M:%S"
+)
 
 
 def has_null_values(df: pd.DataFrame) -> bool:
@@ -139,10 +145,10 @@ def timer(func: Callable[P, R]) -> Callable[P, R]:
     @wraps(func)
     def wrapper(*args: P.args, **kwargs: P.kwargs) -> R:
         """Wrapper function that times the execution of `func`."""
-        start = time()
+        start = perf_counter()
         output = func(*args, **kwargs)
-        end = time()
-        print(f"[INFO] {func.__name__} took {end - start:.6f} seconds.")
+        end = perf_counter()
+        logging.info(f"{func.__name__} executed in {(end - start):.6f} seconds")
         return output
 
     return wrapper
