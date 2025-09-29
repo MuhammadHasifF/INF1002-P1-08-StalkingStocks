@@ -33,57 +33,69 @@ python install -r requirements.txt
 ### Starting the App
 
 ```bash
-streamlit run app/main.py
+streamlit run app.py
 ```
 
 ### Testing
 
 ```bash
 # run all tests
-pytest
+python -m pytest
 
 # run tests in a specific file
-pytest path/to/your_test_file.py
+python -m pytest path/to/your_test_file.py
 
 # run tests by keyword
-pytest -k "keyword_to_match"
+python -m pytest -k "keyword_to_match"
 
 # run test on specific function
-pytest path/to/your_test_file.py::test_function_name
+python -m pytest path/to/your_test_file.py::test_function_name
 
 # to get verbose output during tests
-pytest -v
+python -m pytest -v
 ```
 
 ## Project Structure
 
-```bash
+```markdown
 .
+├── app.py                     # Main entry script for the project.
 ├── app
-│   ├── main.py             # entry point of our application
-│   ├── constants           # domain-specific constants
+│   ├── dashboard.py           # Main dashboard logic and Streamlit interface functions
+│   ├── __init__.py
+│   ├── constants
 │   │   ├── __init__.py
-│   │   └── sectors.py
-│   ├── models              # data models live here
+│   │   └── sectors.py         # Contains sector-related constants and mappings
+│   ├── models
 │   │   ├── __init__.py
-│   │   └── base.py
-│   ├── schemas             # dataframe models live here
+│   │   └── base.py            # Core data models (e.g., Industry, Sector, Ticker)
+│   ├── schemas
 │   │   ├── __init__.py
-│   │   └── dataframes.py
-│   ├── services            # business logic (interfacing with yfinance, APIs)
+│   │   └── dataframe.py       # Schema definitions for tabular data structures
+│   ├── services
 │   │   ├── __init__.py
-│   │   ├── core.py
-│   │   ├── data.py
-│   │   └── finance.py
-│   └── utils               # helper functions/utilities
+│   │   ├── core.py            # Core business logic functions (e.g., compute_max_profit, compute_sdr)
+│   │   ├── data.py            # Data handling functions (e.g., load, transform, save)
+│   │   └── finance.py         # Finance-related computations and analytics
+│   └── utils
 │       ├── __init__.py
-│       └── helpers.py
-├── tests                   # tests go here
-│   └── ...
+│       └── helpers.py         # General helper functions (e.g., timers, logging, small utilities)
 ├── docs
 │   ├── Project Proposal.pdf
 │   ├── Project Specifications and Rubrics.pdf
 │   └── System Design.pdf
+├── notebook
+│   ├── algorithms.ipynb
+│   ├── data.ipynb
+│   ├── guide.ipynb
+│   └── programming notes.ipynb
 ├── README.md
-└── requirements.txt
+├── requirements.txt
+└── tests
+    ├── conftest.py
+    ├── test_core.py
+    ├── test_finance.py
+    └── test_models.py
+
+10 directories, 28 files
 ```
