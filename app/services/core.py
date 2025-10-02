@@ -22,9 +22,7 @@ import pandas as pd
 from ..utils.helpers import timer
 
 
-# ============================================================
-# 1. SIMPLE MOVING AVERAGE (SMA)
-# ============================================================
+# computing SMA
 @timer
 def compute_sma(close: pd.Series, window: int = 5) -> pd.Series:
     """
@@ -53,9 +51,7 @@ def compute_sma(close: pd.Series, window: int = 5) -> pd.Series:
     return pd.Series(out, index=close.index)
 
 
-# ============================================================
-# 2. TREND RUNS (UP/DOWN STREAKS)
-# ============================================================
+# computing trend runs (up/down streaks)
 @timer
 def compute_streak(close: pd.Series) -> tuple[int, int]:
     """
@@ -95,9 +91,7 @@ def compute_streak(close: pd.Series) -> tuple[int, int]:
             max(down_runs) if down_runs else 0)
 
 
-# ============================================================
-# 3. DAILY RETURNS
-# ============================================================
+# daily returns
 @timer
 def compute_sdr(close: pd.Series) -> pd.Series:
     """
@@ -117,9 +111,7 @@ def compute_sdr(close: pd.Series) -> pd.Series:
     return pd.Series(out, index=close.index)
 
 
-# ============================================================
-# 4. MAX PROFIT (BEST TIME II — SUM OF RISES)
-# ============================================================
+# Max profit
 @timer
 def compute_max_profit(close: pd.Series) -> float:
     """
@@ -135,83 +127,3 @@ def compute_max_profit(close: pd.Series) -> float:
         if values[i + 1] > values[i]:
             profit += values[i + 1] - values[i]
     return float(profit)
-
-
-# ============================================================
-# --- EXTRA HELPERS (manual only, not in main tests) ---
-# ============================================================
-
-def extract_trades_for_ticker_manual(rows: list[dict], ticker: str) -> list[dict]:
-    """
-    For one ticker:
-      - Buy just before a rise
-      - Sell at the peak (before drop or last day)
-    Returns list of trades.
-    """
-    g = [r for r in rows if r["Ticker"] == ticker]
-    g = sorted(g, key=lambda r: r["Date"])
-
-    trades = []
-    holding = False
-    buy_date = buy_price = None
-
-    for i in range(1, len(g)):
-        prev_p, cur_p = g[i - 1]["Close"], g[i]["Close"]
-        prev_d, cur_d = g[i - 1]["Date"], g[i]["Date"]
-
-        if not holding and cur_p > prev_p:
-            holding = True
-            buy_date, buy_price = prev_d, prev_p
-
-        is_last = (i == len(g) - 1)
-        next_drop_or_end = (cur_p > prev_p and (is_last or g[i + 1]["Close"] < cur_p))
-
-        if holding and next_drop_or_end:
-            trades.append({
-                "Ticker": ticker,
-                "buy_date": buy_date,
-                "buy_price": buy_price,
-                "sell_date": cur_d,
-                "sell_price": cur_p,
-                "profit": cur_p - buy_price
-            })
-            holding = False
-
-    return trades
-
-
-def trades_for_all_manual(rows: list[dict]) -> list[dict]:
-    """
-    Collect trades for all tickers manually.
-    Returns list of trades across all tickers.
-    """
-    tickers = sorted(set(r["Ticker"] for r in rows))
-    out = []
-    for tkr in tickers:
-        out.extend(extract_trades_for_ticker_manual(rows, tkr))
-    return out
-
-
-def max_profit_summary_manual(rows: list[dict]) -> list[dict]:
-    """
-    Summarise max profit (sum of rises) per ticker manually.
-    Returns sorted list of dicts.
-    """
-    tickers = sorted(set(r["Ticker"] for r in rows))
-    out = []
-    for tkr in tickers:
-        trades = extract_trades_for_ticker_manual(rows, tkr)
-        total = sum(t["profit"] for t in trades)
-        out.append({"Ticker": tkr, "Max_Profit": total})
-
-    out.sort(key=lambda x: x["Max_Profit"], reverse=True)
-    return out
-
-# ------------------------------------------------------------------
-# NOTE: These helpers (`extract_trades_for_ticker`, `trades_for_all`,
-#       and `max_profit_summary`) are not used in automated tests.
-#       They are provided for application-level use cases such as:
-#           - Plotting buy/sell markers on price charts
-#           - Showing per-ticker trade history
-#           - Ranking tickers by profit potential
-# ------------------------------------------------------------------
