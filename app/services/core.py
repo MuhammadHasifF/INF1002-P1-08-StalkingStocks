@@ -30,27 +30,39 @@ from ..utils.helpers import timer
 @timer
 def compute_sma(close: pd.Series, window: int = 5) -> pd.Series:
     """
-    Compute simple moving averages (SMAs) manually.
-    
+    Compute simple moving averages (SMAs) manually using a sliding window.
+
+    RATIONALE:
+    - SMA smooths out price fluctuations by averaging the last N closes.
+    - Common windows: 5 (short-term), 20 (≈1 trading month), 50 (medium-term).
+    - Used to identify market trends and reduce noise in time-series data.
+
     EFFICIENCY ANALYSIS:
-    - Time Complexity: O(n) - single pass through data
-    - Space Complexity: O(n) - stores output array
-    - Algorithmic Efficiency: Optimal - uses sliding window technique
-    
+    - Time Complexity: O(n) — single pass through all prices.
+    - Space Complexity: O(n) — stores output values.
+    - Algorithmic Efficiency: Optimal — uses sliding window to avoid recomputation.
+
     Why O(n) time complexity?
-    - We iterate through each price once
-    - Sliding window: add new price, remove old price (constant time operations)
-    - No nested loops needed
-    
+    - Each price is processed once.
+    - Running sum updated in constant time (add new, remove old).
+    - Avoids nested loops or recomputing averages from scratch.
+
     Why O(n) space complexity?
-    - Output array same size as input
-    - Constant extra variables (running_sum)
-    
+    - Output array same size as input.
+    - Only constant extra variables needed (running_sum).
+
+    Formula:
+        SMA_t = (P_t + P_{t-1} + ... + P_{t-N+1}) / N
+
     Args:
-        close (pd.Series): closing prices
-        window (int): window size
+        close (pd.Series): Closing prices
+        window (int): Lookback window size (5, 20, 50, etc.)
+
     Returns:
         pd.Series of SMA values (NaN where insufficient data)
+
+    Reference:
+        https://www.investopedia.com/ask/answers/122414/what-are-most-common-periods-used-creating-moving-average-ma-lines.asp
     """
     # Convert pandas input to NumPy array for computation (manual algorithms)
     values: np.ndarray = close.values
@@ -83,29 +95,42 @@ def compute_sma(close: pd.Series, window: int = 5) -> pd.Series:
 @timer
 def compute_streak(close: pd.Series) -> tuple[int, int]:
     """
-    Compute longest upward and downward streaks manually.
-    
+    Compute longest upward and downward streaks of consecutive days manually.
+
+    RATIONALE:
+    - Measures persistence of trends (momentum vs. reversals).
+    - Up run = consecutive days with Close_t > Close_{t-1}.
+    - Down run = consecutive days with Close_t < Close_{t-1}.
+    - Flat days (Close_t == Close_{t-1}) are neutral — they break streaks but do not count.
+
     EFFICIENCY ANALYSIS:
-    - Time Complexity: O(n) - single pass through data
-    - Space Complexity: O(1) - constant extra space (optimized!)
-    - Algorithmic Efficiency: Optimal - linear time, constant space solution
-    
+    - Time Complexity: O(n) — single pass through data.
+    - Space Complexity: O(1) — constant extra space.
+    - Algorithmic Efficiency: Optimal — minimal state tracking.
+
     Why O(n) time complexity?
-    - Single pass: Process each price pair once (n-1 comparisons)
-    - Each comparison and streak update is constant time
-    - No nested loops needed
-    
+    - Each price compared once to previous.
+    - Update streak counters in constant time.
+
     Why O(1) space complexity?
-    - Only uses constant extra variables (4 integers total - ultra-optimized!)
-    - No arrays or lists needed - tracks streaks in real-time
-    - Space usage doesn't grow with input size
-    - Minimal memory footprint for maximum efficiency
-    
+    - Only uses four counters: longest_up, longest_down, current_streak, direction.
+    - No arrays or dynamic memory needed.
+
+    Formula:
+        Up streak: max consecutive (Close_t > Close_{t-1})
+        Down streak: max consecutive (Close_t < Close_{t-1})
+
     Args:
-        close (pd.Series): closing prices
+        close (pd.Series): Closing prices
+
     Returns:
-        (longest_up, longest_down) as tuple[int, int]
+        tuple[int, int]: (longest_up, longest_down)
+
+    Reference:
+        Wald–Wolfowitz Runs Test (handling ties): 
+        https://en.wikipedia.org/wiki/Wald%E2%80%93Wolfowitz_runs_test
     """
+
     # Convert pandas input to NumPy array for computation (manual algorithms)
     values: np.ndarray = close.values
     n: int = len(values)
@@ -161,29 +186,45 @@ def compute_streak(close: pd.Series) -> tuple[int, int]:
 @timer
 def compute_sdr(close: pd.Series) -> pd.Series:
     """
-    Compute daily returns manually.
-    
+    Compute daily returns manually as percentage changes in closing price.
+
+    RATIONALE:
+    - Normalizes price movements across tickers.
+    - Used to analyze volatility, compare stocks, and calculate risk metrics.
+    - Positive = stock went up, Negative = stock went down, Zero = no change.
+
     EFFICIENCY ANALYSIS:
-    - Time Complexity: O(n) - single pass through data
-    - Space Complexity: O(n) - stores output array
-    - Algorithmic Efficiency: Optimal - cannot do better than O(n)
-    
+    - Time Complexity: O(n) — single pass through data.
+    - Space Complexity: O(n) — output array same size as input.
+    - Algorithmic Efficiency: Optimal — step-by-step ratio comparisons.
+
     Why O(n) time complexity?
-    - Must examine each price pair (current, previous)
-    - n-1 comparisons for n prices
-    - Each calculation is constant time
-    
+    - Each pair of consecutive prices compared once.
+    - Calculation (curr - prev) / prev is constant time.
+
     Why O(n) space complexity?
-    - Output array same size as input
-    - Constant extra variables
-    
-    Formula: (P_t - P_{t-1}) / P_{t-1}
-    
+    - Output series has same length as input.
+    - Only constant extra variables used.
+
+    Formula:
+        r_t = (P_t - P_{t-1}) / P_{t-1}
+            = P_t / P_{t-1} - 1
+
+    Edge Cases:
+    - First row has no prior price → return = None.
+    - If previous price = 0, return = None (avoids divide-by-zero).
+
     Args:
-        close (pd.Series): closing prices
+        close (pd.Series): Closing prices
+
     Returns:
         pd.Series of daily returns
+
+    Reference:
+        Pandas pct_change (we reimplemented manually):
+        https://pandas.pydata.org/docs/reference/api/pandas.Series.pct_change.html
     """
+
     # Convert pandas input to NumPy array for computation (manual algorithms)
     values: np.ndarray = close.values
     n: int = len(values)
