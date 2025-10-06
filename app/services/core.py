@@ -93,7 +93,7 @@ def compute_sma(close: pd.Series, window: int = 5) -> pd.Series:
 
 # computing trend runs (up/down streaks)
 @timer
-def compute_streak(close: pd.Series) -> tuple[int, int]:
+def compute_streak(close: pd.Series) -> tuple[int, int, pd.Series]:
     """
     Compute longest upward and downward streaks of consecutive days manually.
 
@@ -102,29 +102,34 @@ def compute_streak(close: pd.Series) -> tuple[int, int]:
     - Up run = consecutive days with Close_t > Close_{t-1}.
     - Down run = consecutive days with Close_t < Close_{t-1}.
     - Flat days (Close_t == Close_{t-1}) are neutral — they break streaks but do not count.
+    - Adds a direction mask (-1, 0, 1) for visualisation of trend segments in plots.
 
     EFFICIENCY ANALYSIS:
     - Time Complexity: O(n) — single pass through data.
-    - Space Complexity: O(1) — constant extra space.
-    - Algorithmic Efficiency: Optimal — minimal state tracking.
+    - Space Complexity: O(1) auxiliary (O(n) for returned mask array).
+    - Algorithmic Efficiency: Optimal — minimal variable tracking, no redundant passes.
 
     Why O(n) time complexity?
     - Each price compared once to previous.
     - Update streak counters in constant time.
 
-    Why O(1) space complexity?
-    - Only uses four counters: longest_up, longest_down, current_streak, direction.
-    - No arrays or dynamic memory needed.
+    Why O(1) auxiliary space complexity?
+    - Uses only four counters (longest_up, longest_down, current_streak, direction).
+    - Mask array is part of expected output, not auxiliary storage.
 
     Formula:
         Up streak: max consecutive (Close_t > Close_{t-1})
         Down streak: max consecutive (Close_t < Close_{t-1})
+        Mask: 1 = Up, -1 = Down, 0 = Flat
 
     Args:
         close (pd.Series): Closing prices
 
     Returns:
-        tuple[int, int]: (longest_up, longest_down)
+        tuple[int, int, pd.Series]: (longest_up, longest_down, trend_mask)
+            - longest_up: longest upward run length.
+            - longest_down: longest downward run length.
+            - trend_mask: Series of daily direction values for plotting.
 
     Reference:
         Wald–Wolfowitz Runs Test (handling ties): 
@@ -134,52 +139,56 @@ def compute_streak(close: pd.Series) -> tuple[int, int]:
     # Convert pandas input to NumPy array for computation (manual algorithms)
     values: np.ndarray = close.values
     n: int = len(values)
-    
+
     # Handle edge case: need at least 2 prices to determine direction
     if n <= 1:
-        return (0, 0)
-    
-    # Only 4 variables needed
+        return (0, 0, pd.Series(np.zeros(n, dtype=int), index=close.index))
+
+    # Initialize counters and mask
     longest_up_streak: int = 0
     longest_down_streak: int = 0
     current_streak: int = 0
     current_direction: int = 0  # 0 = no direction, 1 = up, -1 = down
-    
-    # Single pass through data - process each price pair
+    mask: np.ndarray = np.zeros(n, dtype=int)
+
+    # Single pass through all prices
     for i in range(1, n):
         previous_price: float = values[i - 1]
         current_price: float = values[i]
-        
-        # Determine direction using pure Python logic
+
+        # Determine movement direction
         if current_price > previous_price:
-            new_direction: int = 1  # Upward movement
+            new_direction: int = 1   # Upward movement
         elif current_price < previous_price:
             new_direction: int = -1  # Downward movement
         else:
-            new_direction: int = 0  # No change
-        
+            new_direction: int = 0   # Flat day
+
+        # Record daily trend in mask for plotting
+        mask[i] = new_direction
+
         # Update streaks efficiently
         if new_direction == current_direction and new_direction != 0:
-            # Continue current streak
             current_streak += 1
         else:
-            # Direction changed - update longest streaks and reset
+            # Direction change — update longest streaks before reset
             if current_direction == 1 and current_streak > longest_up_streak:
                 longest_up_streak = current_streak
             elif current_direction == -1 and current_streak > longest_down_streak:
                 longest_down_streak = current_streak
-            
-            # Start new streak
+
+            # Reset for next streak
             current_direction = new_direction
             current_streak = 1 if new_direction != 0 else 0
-    
-    # Handle final streak (don't forget the last run!)
+
+    # Final streak check (include last run)
     if current_direction == 1 and current_streak > longest_up_streak:
         longest_up_streak = current_streak
     elif current_direction == -1 and current_streak > longest_down_streak:
         longest_down_streak = current_streak
 
-    return (longest_up_streak, longest_down_streak)
+    # Return results with mask as Series
+    return (longest_up_streak, longest_down_streak, pd.Series(mask, index=close.index))
 
 
 # daily returns
