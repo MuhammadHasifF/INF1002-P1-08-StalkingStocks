@@ -93,7 +93,7 @@ def compute_sma(close: pd.Series, window: int = 5) -> pd.Series:
 
 # computing trend runs (up/down streaks)
 @timer
-def compute_streak(close: pd.Series) -> tuple[int, int]:
+def compute_streak(close: pd.Series) -> tuple[int, int, pd.Series]:
     """
     Compute longest upward and downward streaks of consecutive days manually.
 
