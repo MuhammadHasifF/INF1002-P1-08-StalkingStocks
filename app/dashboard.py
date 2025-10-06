@@ -1,15 +1,17 @@
-from typing import Sequence
+from typing import Any, Sequence
+
 import plotly.express as px
-from pandas import DataFrame
 import plotly.graph_objs as go
 import streamlit as st
+from pandas import DataFrame
 from plotly.subplots import make_subplots
 
 # from app.engine.summary import generate_sector_summary
-from app.services.core import compute_sdr
+from app.services.core import compute_sdr, compute_sma
 
-from .services.finance import (get_industry_data, get_industry_info, get_sector_data, get_sectors,
-                               get_ticker_data, get_ticker_info)
+from .services.finance import (get_industry_data, get_industry_info,
+                               get_sector_data, get_sectors, get_ticker_data,
+                               get_ticker_info)
 from .utils.helpers import (format_large_number, format_name, rolling_window,
                             timer)
 
@@ -47,7 +49,7 @@ def display_sector_overview(column, sector_data) -> None:
 
 
 def display_industry_overview(column, industries) -> None:
-    column.subheader("Sector Breakdown by Market Weight")
+    column.subheader("Sector Breakdown")
     industry_weights = {
         format_name(ind): get_industry_info(ind).market_weight for ind in industries
     }
@@ -66,9 +68,153 @@ def display_industry_overview(column, industries) -> None:
     )
     fig.update_traces(
         texttemplate="%{label}<br>%{value:.2%}",  # show label and percentage
-        textfont=dict(size=18)   # 👈 increase label size
+        textfont=dict(size=18),  # 👈 increase label size
     )
     column.plotly_chart(fig, use_container_width=True)
+
+
+def display_filters(column, industries, top_companies) -> dict[str, Any]:
+    selected_industry = column.selectbox(
+        "Choose an industry", industries, format_func=format_name
+    )
+
+    # selected_top = filter_col.selectbox(
+    #     "Select a list",
+    #     ["top_companies", "top_etfs", "top_mutual_funds"],
+    #     format_func=format_name,
+    # )
+
+    selected_ticker = column.selectbox("Select a ticker", top_companies)
+
+    horizon_mapping = {
+        "1 Day": {"n": 1, "unit": "days"},  # interval = 1m
+        "5 Day": {"n": 5, "unit": "days"},
+        "1 Month": {"n": 1, "unit": "months"},
+        "6 Month": {"n": 6, "unit": "months"},
+        "1 Year": {"n": 1, "unit": "years"},
+        "3 Year": {"n": 3, "unit": "years"},
+        "5 Year": {"n": 5, "unit": "years"},
+    }
+
+    selected_key = column.pills(
+        "Time Horizon", options=list(horizon_mapping.keys()), default="1 Year"
+    )
+
+    selected_horizon = horizon_mapping[selected_key]
+
+    intra_day_intervals = ["1m", "2m", "5m", "15m", "30m", "1h"]
+    daily_intervals = ["5d", "1wk", "1mo", "3mo"]
+
+    data_intervals = ["1d"]
+
+    if selected_horizon["unit"] == "days":
+        data_intervals = intra_day_intervals + data_intervals
+    else:
+        data_intervals += daily_intervals
+
+    selected_interval = column.pills(
+        "Data Interval", data_intervals, default=data_intervals[0]
+    )
+
+    indicator_mapping = {"SMA 5": 5, "SMA 20": 20, "SMA 50": 50}
+
+    tech_indicators = column.multiselect(
+        "Technical Indicators",
+        options=list(indicator_mapping.keys()),
+        default=[],
+    )
+    selected_indicators = [indicator_mapping[ind] for ind in tech_indicators]
+
+    selected_candle = column.checkbox(
+        "Candlestick Chart",
+    )
+
+    start, end = rolling_window(**selected_horizon)
+
+    # can change to dataclass/basemodel
+    filters = {
+        "selected_industry": selected_industry,
+        "selected_ticker": selected_ticker,
+        "selected_horizon": (start, end),
+        "selected_interval": selected_interval,
+        "selected_indicators": selected_indicators,
+        "selected_candle": selected_candle,
+    }
+
+    return filters
+
+
+def display_graphs(column, data, filters) -> None:
+    if data is None:
+        column.error("No price data was found. Try again.")
+    else:
+        ticker_info = get_ticker_info(filters["selected_ticker"])
+        column.subheader(f"{ticker_info.long_name} ({ticker_info.symbol})")
+        column.write()
+
+        fig = make_subplots(
+            rows=2,
+            cols=1,
+            shared_xaxes=True,
+            vertical_spacing=0.03,
+            row_heights=[0.7, 0.3],
+        )
+
+        if filters["selected_candle"]:
+            fig.add_trace(
+                go.Candlestick(
+                    x=data.index,
+                    open=data["Open"],
+                    high=data["High"],
+                    low=data["Low"],
+                    close=data["Close"],
+                    name="Price",
+                ),
+                row=1,
+                col=1,
+            )
+        else:
+            # Overlay line chart (e.g., closing price line)
+            fig.add_trace(
+                go.Scatter(
+                    x=data.index,
+                    y=data["Close"],
+                    mode="lines",
+                    line=dict(color="blue", width=1.5),
+                    name="Close Price",
+                ),
+                row=1,
+                col=1,
+            )
+
+        for n in filters["selected_indicators"]:
+            fig.add_trace(
+                go.Scatter(
+                    x=data.index,
+                    y=compute_sma(data["Close"], n),
+                    mode="lines",
+                    line=dict(width=1.5),
+                    name=f"SMA {n}",
+                ),
+                row=1,
+                col=1,
+            )
+
+        # fig.add_trace(
+        #     go.Bar(x=ticker_data.index, y=ticker_data["Volume"], name="Volume"),
+        #     row=2,
+        #     col=1,
+        # )
+
+        fig.update_layout(
+            # title=f"Candlestick Chart for {selected_ticker}",
+            xaxis=dict(title="Date"),
+            yaxis=dict(title="Price"),
+            margin=dict(l=0, r=0, t=0, b=0),
+        )
+
+        column.plotly_chart(fig)
+
 
 @timer
 def run_dashboard():
@@ -89,155 +235,19 @@ def run_dashboard():
 
     filter_col, graph_col = st.columns([1, 3], border=True)
 
-    selected_industry = filter_col.selectbox(
-        "Choose an industry", sector_data.industries, format_func=format_name
+    sector_dict = sector_data.model_dump()
+    filters = display_filters(
+        filter_col, sector_dict["industries"], sector_dict["top_companies"]
     )
 
-    # selected_top = filter_col.selectbox(
-    #     "Select a list",
-    #     ["top_companies", "top_etfs", "top_mutual_funds"],
-    #     format_func=format_name,
-    # )
-
-    selected_ticker = filter_col.selectbox(
-        "Select a ticker", sector_data.model_dump()["top_companies"]
-    )
-
-    horizon_mapping = {
-        "1 Day": {"n": 1, "unit": "days"},  # interval = 1m
-        "5 Day": {"n": 5, "unit": "days"},
-        "1 Month": {"n": 1, "unit": "months"},
-        "6 Month": {"n": 6, "unit": "months"},
-        "1 Year": {"n": 1, "unit": "years"},
-        "3 Year": {"n": 3, "unit": "years"},
-        "5 Year": {"n": 5, "unit": "years"},
-    }
-
-    selected_key = filter_col.pills(
-        "Time Horizon", options=list(horizon_mapping.keys()), default="1 Year"
-    )
-
-    selected_horizon = horizon_mapping[selected_key]
-
-    intra_day_intervals = ["1m", "2m", "5m", "15m", "30m", "1h"]
-    daily_intervals = ["5d", "1wk", "1mo", "3mo"]
-
-    data_intervals = ["1d"]
-
-    if selected_horizon["unit"] == "days":
-        data_intervals = intra_day_intervals + data_intervals
-    else:
-        data_intervals += daily_intervals
-
-    selected_interval = filter_col.pills(
-        "Data Interval", data_intervals, default=data_intervals[0]
-    )
-
-    options = filter_col.multiselect(
-        "Technical Indicators",
-        ["SMA 5", "SMA 20", "SMA 50"],
-        default=[],
-    )
-
-
-    start, end = rolling_window(**selected_horizon)
-
+    start, end = filters["selected_horizon"]
     ticker_data = get_ticker_data(
-        selected_ticker,
-        interval=selected_interval,
+        filters["selected_ticker"],
+        interval=filters["selected_interval"],
         start=start,
         end=end,
         progress=False,
         auto_adjust=True,
     )
 
-    if ticker_data is None:
-        graph_col.error("No price data was found. Try again.")
-    else:
-        ticker_info = get_ticker_info(selected_ticker)
-        graph_col.subheader(f"{ticker_info.long_name} ({ticker_info.symbol})")
-        graph_col.write()
-
-        fig = make_subplots(
-            rows=2,
-            cols=1,
-            shared_xaxes=True,
-            vertical_spacing=0.03,
-            row_heights=[0.7, 0.3],
-        )
-
-        fig.add_trace(
-            go.Candlestick(
-                x=ticker_data.index,
-                open=ticker_data["Open"],
-                high=ticker_data["High"],
-                low=ticker_data["Low"],
-                close=ticker_data["Close"],
-                name="Price",
-            ),
-            row=1,
-            col=1,
-        )
-
-        # Overlay line chart (e.g., closing price line)
-        fig.add_trace(
-            go.Scatter(
-                x=ticker_data.index,
-                y=ticker_data["Close"],
-                mode="lines",
-                line=dict(color="blue", width=1.5),
-                name="Close Price",
-            ),
-            row=1,
-            col=1,
-        )
-
-        fig.add_trace(
-            go.Bar(x=ticker_data.index, y=ticker_data["Volume"], name="Volume"),
-            row=2,
-            col=1,
-        )
-
-        fig.update_layout(
-            # title=f"Candlestick Chart for {selected_ticker}",
-            xaxis=dict(title="Date"),
-            yaxis=dict(title="Price"),
-            margin=dict(l=0, r=0, t=0, b=0),
-        )
-
-        graph_col.plotly_chart(fig)
-
-    # for ind in sector_data.industries:
-    #     industry_col.write(get_industry_info(ind))
-
-
-    # display_industry_overview(industry_col, industry_data)
-
-    # col1, col2 = st.columns(2)
-    #
-    # st.divider()
-
-    # col1, col2 = st.columns([1, 3], border=True)
-    #
-    #
-    #
-    # # get the nested dict directly
-    #
-    #
-    # st.write("You selected:", options)
-    #
-    #
-    #     meow1, meow2, meow3 = st.columns(3)
-    #     with col2:
-    #         meow1.metric("Companies", overview["companies_count"], border=True)
-    #
-    #     with col2:
-    #         meow2.metric("Industries", overview["industries_count"], border=True)
-    #
-    #     with col2:
-    #         meow3.metric(
-    #             "Employees",
-    #             format_large_number(overview["employee_count"]),
-    #             border=True,
-    #         )
-    #
+    display_graphs(graph_col, ticker_data, filters)
