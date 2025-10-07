@@ -14,7 +14,7 @@ Notes:
 """
 from __future__ import annotations
 import pandas as pd
-import numpy as np
+
 
 try:
     # same relative path style as core.py; adjust if your package layout differs
@@ -112,18 +112,3 @@ def clean_outliers_iqr(series: pd.Series, replace_with_nan: bool = True, k: floa
         return series.mask((series < lower) | (series > upper))
     else:
         return series.clip(lower=lower, upper=upper)
-
-# optional small helper with a matching docstring style
-def _iqr_bounds(series: pd.Series, k: float = 3.0) -> tuple[float, float]:
-    """
-    Compute Tukey IQR (lower, upper) bounds for a numeric Series.
-    Args:
-        series (pd.Series): Numeric Series.
-        k (float): IQR multiplier (1.5 typical, 3.0 stricter).
-    Returns:
-        tuple[float, float]: (lower, upper) bounds.
-    """
-    q1 = series.quantile(0.25)
-    q3 = series.quantile(0.75)
-    iqr = q3 - q1
-    return (q1 - k * iqr, q3 + k * iqr)
