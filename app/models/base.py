@@ -46,8 +46,7 @@ class Industry(BaseModel):
     employee_count: int | None
     market_cap: int | None
     market_weight: float | None
-    # top_performing: DataFrame[TopPerforming]
-    # top_growing: DataFrame[TopGrowing]
+    pct_change: float | None
 
 
 class Sector(BaseModel):
