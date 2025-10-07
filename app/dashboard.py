@@ -7,7 +7,7 @@ from pandas import DataFrame
 from plotly.subplots import make_subplots
 
 # from app.engine.summary import generate_sector_summary
-from app.services.core import compute_sdr, compute_sma
+from app.services.core import compute_max_profit, compute_sdr, compute_sma, compute_streak
 
 from .services.finance import (get_industry_data, get_industry_info,
                                get_sector_data, get_sectors, get_ticker_data,
@@ -23,7 +23,7 @@ def configure_page() -> None:
 def display_header() -> None:
     st.title("📈 Stalking Stocks")
     st.markdown(
-        "<small style='color: gray;'>Made by Tim, Gin, Hasif, Dalton, Aamir</small>",
+        "<small style='color: gray;'>Made by Aamir, Dalton, Gin, Hasif, and Tim.</small>",
         unsafe_allow_html=True,
     )
 
@@ -125,9 +125,9 @@ def display_filters(column, industries, top_companies) -> dict[str, Any]:
     )
     selected_indicators = [indicator_mapping[ind] for ind in tech_indicators]
 
-    selected_candle = column.checkbox(
-        "Candlestick Chart",
-    )
+    selected_candle = column.checkbox("Show Candlestick Chart")
+    selected_trend_runs = column.checkbox("Show Trend Runs")
+    # selected_trend_runs = right_container.checkbox("c")
 
     start, end = rolling_window(**selected_horizon)
 
@@ -139,18 +139,50 @@ def display_filters(column, industries, top_companies) -> dict[str, Any]:
         "selected_interval": selected_interval,
         "selected_indicators": selected_indicators,
         "selected_candle": selected_candle,
+        "selected_trend_runs": selected_trend_runs,
     }
 
     return filters
 
 
 def display_graphs(column, data, filters) -> None:
+    ticker_info = get_ticker_info(filters["selected_ticker"])
+    up, down, mask = compute_streak(data["Close"])
+
+    close = data["Close"]
+    sdr = compute_sdr(close)
+
+    display_name = f"{ticker_info.long_name} ({ticker_info.symbol})"
+    latest_price = close.iloc[-1]
+    latest_return = sdr.iloc[-1] * 100
+    previous_close = close.iloc[-2]
+
+    max_profit = compute_max_profit(close)
+
+    column.subheader(display_name)
+
+    st.write(ticker_info)
+
+    row = column.container(horizontal=True)
+    with row:
+        # st.write(ticker_info.price, latest_price)
+        st.metric(
+            "Price", f"{latest_price:.2f} USD", f"{latest_return:.2f} %", border=False
+        )
+
+        st.metric(
+            "Previous Close", f"{previous_close:.2f} USD", border=False
+        )
+        # st.metric("Mkt. Cap.", f"{up} days", "", border=False)
+        # st.metric("Longest Up", f"{up} days", "", border=False)
+        # should i put this here or elsewhere?
+        st.metric("Longest Up", f"{up}", border=False)
+        st.metric("Longest Down", f"{down}", border=False)
+        st.metric("Max Profit", f"{max_profit:.2f}")
+
     if data is None:
         column.error("No price data was found. Try again.")
     else:
-        ticker_info = get_ticker_info(filters["selected_ticker"])
-        column.subheader(f"{ticker_info.long_name} ({ticker_info.symbol})")
-        column.write()
 
         fig = make_subplots(
             rows=2,
@@ -160,7 +192,7 @@ def display_graphs(column, data, filters) -> None:
             row_heights=[0.7, 0.3],
         )
 
-        if filters["selected_candle"]:
+        if filters["selected_candle"] and not filters["selected_trend_runs"]:
             fig.add_trace(
                 go.Candlestick(
                     x=data.index,
@@ -173,14 +205,53 @@ def display_graphs(column, data, filters) -> None:
                 row=1,
                 col=1,
             )
-        else:
-            # Overlay line chart (e.g., closing price line)
+        elif filters["selected_trend_runs"] and not filters["selected_candle"]:
+            marker_colors = ["green" if m == 1 or m == 0 else "red" for m in mask]
+            mode = "lines+markers"
+            line_color = "gray"
+
             fig.add_trace(
                 go.Scatter(
                     x=data.index,
                     y=data["Close"],
-                    mode="lines",
-                    line=dict(color="blue", width=1.5),
+                    mode=mode,
+                    line=dict(color=line_color),  # fallback, ignored by marker coloring
+                    marker=dict(color=marker_colors, size=8),  # color points
+                    name="Close Price",
+                ),
+                row=1,
+                col=1,
+            )
+
+            # # Add static annotation (paper coordinates)
+            # fig.add_annotation(
+            #     x=0.02,
+            #     y=0.98,  # 2% from left, 2% from top
+            #     xref="paper",
+            #     yref="paper",  # relative to figure, not data
+            #     text=f"📈 Longest Up Run: {up} days<br>📉 Longest Down Run: {down} days",
+            #     showarrow=False,
+            #     font=dict(size=13, color="black"),
+            #     align="left",
+            #     bgcolor="rgba(255,255,255,0.6)",  # semi-transparent background for visibility
+            #     bordercolor="black",
+            #     borderwidth=1,
+            #     borderpad=4,
+            # )
+
+        else:
+            marker_colors = "gray"  # arbitrary color, wont show up anyways
+            mode = "lines"
+            line_color = "blue"
+
+            # line chart (e.g., closing price line)
+            fig.add_trace(
+                go.Scatter(
+                    x=data.index,
+                    y=data["Close"],
+                    mode=mode,
+                    line=dict(color=line_color),  # fallback, ignored by marker coloring
+                    marker=dict(color=marker_colors, size=8),  # color points
                     name="Close Price",
                 ),
                 row=1,
@@ -214,6 +285,8 @@ def display_graphs(column, data, filters) -> None:
         )
 
         column.plotly_chart(fig)
+        with column.expander(f"{display_name} Overview - {ticker_info.industry} / {ticker_info.sector}"):
+            st.write(ticker_info.description)
 
 
 @timer
@@ -221,9 +294,9 @@ def run_dashboard():
     configure_page()
     display_header()
 
-    sector_col, industry_col = st.columns(2, border=True)
     sectors: Sequence[str] = get_sectors()
 
+    sector_col, industry_col = st.columns(2, border=True)
     selected_sector = sector_col.selectbox(
         "Choose a sector", sectors, index=9, format_func=format_name
     )
@@ -251,3 +324,6 @@ def run_dashboard():
     )
 
     display_graphs(graph_col, ticker_data, filters)
+
+    max_profit = compute_max_profit(ticker_data['Close'])
+    st.write(max_profit)
