@@ -49,9 +49,8 @@ def display_sector_overview(column, sector_data) -> None:
     right.metric("Market Weight", f"{overview['market_weight']*100:.2f}%")
 
 
-def display_industry_overview(column, industries) -> None:
-    column.subheader("Sector Breakdown")
-
+@st.cache_data
+def create_industry_overview(industries):
     industry_info = {}
 
     for ind in industries:
@@ -61,6 +60,13 @@ def display_industry_overview(column, industries) -> None:
         formatted_ind = format_name(ind)
         industry_info[formatted_ind] = {"weight": market_weight, "pct_change": pct_change}
 
+    return industry_info
+
+#
+def display_industry_overview(column, industries) -> None:
+    column.subheader("Sector Breakdown")
+
+    industry_info = create_industry_overview(industries) 
     # industry_col.write(industry_weights)
     # df = DataFrame(list(industry_weights.items()), columns=["Sub-Industry", "Weight"])
     df = DataFrame.from_dict(industry_info, orient='index').reset_index()
