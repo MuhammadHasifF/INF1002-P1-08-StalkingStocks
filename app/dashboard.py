@@ -51,26 +51,43 @@ def display_sector_overview(column, sector_data) -> None:
 
 def display_industry_overview(column, industries) -> None:
     column.subheader("Sector Breakdown")
-    industry_weights = {
-        format_name(ind): get_industry_info(ind).market_weight for ind in industries
-    }
-    
+
+    industry_info = {}
+
+    for ind in industries:
+        info = get_industry_info(ind)
+        market_weight = info.market_weight
+        pct_change = info.pct_change  # percentage change from previous close
+        formatted_ind = format_name(ind)
+        industry_info[formatted_ind] = {"weight": market_weight, "pct_change": pct_change}
+
     # industry_col.write(industry_weights)
-    df = DataFrame(list(industry_weights.items()), columns=["Sub-Industry", "Weight"])
-    # df["Weight"] = df["Weight"] * 100  # convert to %
+    # df = DataFrame(list(industry_weights.items()), columns=["Sub-Industry", "Weight"])
+    df = DataFrame.from_dict(industry_info, orient='index').reset_index()
+    df.rename(columns={'index': 'industry'}, inplace=True)
+    # df["weight"] = df["weight"] * 100  # convert to %
+    # column.write(df)
+
+    df['color'] = df['pct_change'].apply(lambda x: 'green' if x >= 0 else 'red')
 
     fig = px.treemap(
         df,
-        path=["Sub-Industry"],
-        values="Weight",
+        path=['industry'],  # unique leaves
+        values='weight',
+        color=df['pct_change'] >= 0,  # boolean → True/False
+        color_discrete_map={True:'#2ca02c', False:'#d62728'},
+        custom_data=['pct_change']
     )
+    fig.update_traces(
+        texttemplate="%{label}<br>Weight: %{value:.2%}<br>Change: %{customdata[0]:.2f}%",
+        textfont=dict(size=18)
+    )
+
     fig.update_layout(
         margin=dict(l=0, r=0, t=0, b=0),
     )
-    fig.update_traces(
-        texttemplate="%{label}<br>%{value:.2%}",  # show label and percentage
-        textfont=dict(size=18),  # 👈 increase label size
-    )
+
+
     column.plotly_chart(fig, use_container_width=True)
 
 
@@ -172,14 +189,14 @@ def display_basic_price_info(ticker_info, ticker_data):
 
 
 def display_graphs(column, data, filters) -> None:
+
+    if data is None:
+        st.error("Could not fetch data!")
+
     ticker_info = get_ticker_info(filters["selected_ticker"])
     up, down, mask = compute_streak(data["Close"])
-    #
-    # close = data["Close"]
 
     display_name = f"{ticker_info.long_name} ({ticker_info.symbol})"
-
-    # max_profit = compute_max_profit(close)
 
     column.subheader(display_name)
 
@@ -198,6 +215,7 @@ def display_graphs(column, data, filters) -> None:
             vertical_spacing=0.03,
             row_heights=[0.7, 0.3],
         )
+        fig.update_xaxes(showticklabels=True, row=1, col=1)
 
         if filters["selected_candle"] and not filters["selected_trend_runs"]:
             fig.add_trace(
@@ -247,7 +265,6 @@ def display_graphs(column, data, filters) -> None:
             )
 
         else:
-            marker_colors = "gray"  # arbitrary color, wont show up anyways
             mode = "lines"
             line_color = "blue"
 
@@ -258,7 +275,6 @@ def display_graphs(column, data, filters) -> None:
                     y=data["Close"],
                     mode=mode,
                     line=dict(color=line_color),  # fallback, ignored by marker coloring
-                    marker=dict(color=marker_colors, size=8),  # color points
                     name="Close Price",
                 ),
                 row=1,
@@ -278,20 +294,19 @@ def display_graphs(column, data, filters) -> None:
                 col=1,
             )
 
-        # fig.add_trace(
-        #     go.Bar(x=ticker_data.index, y=ticker_data["Volume"], name="Volume"),
-        #     row=2,
-        #     col=1,
-        # )
-
         fig.update_layout(
-            # title=f"Candlestick Chart for {selected_ticker}",
-            xaxis=dict(title="Date"),
+            xaxis=dict(type="date", tickformat="%b %d, %Y"),
             yaxis=dict(title="Price"),
             margin=dict(l=0, r=0, t=0, b=0),
         )
 
         column.plotly_chart(fig)
+
+        max_profit = compute_max_profit(data["Close"])
+        column.markdown(
+            f"**Your best trading sequence could have earned :green[${max_profit:.2f}] total profit.**"
+        )
+
         with column.expander(f"{display_name} Overview"):
             st.write(ticker_info.description)
 
@@ -331,4 +346,3 @@ def run_dashboard():
     )
 
     display_graphs(graph_col, ticker_data, filters)
-
