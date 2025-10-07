@@ -106,24 +106,14 @@ def yf_industry_to_model(industry_obj: yf.Industry) -> Industry:
     """Converts a yfinance Industry into a structured Industry model."""
 
     overview = industry_obj.overview
-
-    # top_performing = industry_obj.top_performing_companies
-    # top_growing = industry_obj.top_growth_companies
-    #
-    # top_performing.columns = (
-    #     top_performing.columns.str.strip().str.lower().str.replace(" ", "_")
-    # )
-    # top_growing.columns = (
-    #     top_growing.columns.str.strip().str.lower().str.replace(" ", "_")
-    # )
+    extra_info = industry_obj.ticker.get_info()
 
     return Industry(
         description=overview.get('description'),
         employee_count=overview.get('employee_count'),
         market_cap=overview.get('market_cap'),
         market_weight=overview.get('market_weight'),
-        # top_performing=top_performing, 
-        # top_growing=top_growing
+        pct_change=extra_info.get('regularMarketChangePercent')
     )
 
 
