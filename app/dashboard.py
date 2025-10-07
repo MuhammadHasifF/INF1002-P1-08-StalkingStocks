@@ -120,15 +120,18 @@ def display_filters(column, industries, top_companies) -> dict[str, Any]:
 
     selected_horizon = horizon_mapping[selected_key]
 
-    intra_day_intervals = ["1m", "2m", "5m", "15m", "30m", "1h"]
-    daily_intervals = ["5d", "1wk", "1mo", "3mo"]
+    # intra_day_intervals = ["1m", "2m", "5m", "15m", "30m", "1h"]
+    # daily_intervals = ["5d", "1wk", "1mo", "3mo"]
+    #
+    # data_intervals = ["1d"]
 
-    data_intervals = ["1d"]
-
+    # i lazy fix the error here AHHHHHH
     if selected_horizon["unit"] == "days":
-        data_intervals = intra_day_intervals + data_intervals
+        data_intervals = ["1m", "2m", "5m", "15m", "30m", "1h"] 
+    elif selected_horizon['unit'] == "days" and selected_horizon['n'] == 5:
+        data_intervals = ["1m", "2m", "5m", "15m", "30m", "1h", "1d"] 
     else:
-        data_intervals += daily_intervals
+        data_intervals = ["1d", "5d", "1wk", "1mo", "3mo"]
 
     selected_interval = column.pills(
         "Data Interval", data_intervals, default=data_intervals[0]
@@ -169,7 +172,7 @@ def display_basic_price_info(ticker_info, ticker_data):
     high = ticker_data["High"]
     low = ticker_data["Low"]
     sdr = compute_sdr(close)
-
+    
     latest_price = ticker_info.price
     latest_return = sdr.iloc[-1] * 100
     previous_close = close.iloc[-2]
@@ -191,7 +194,7 @@ def display_basic_price_info(ticker_info, ticker_data):
 def display_graphs(column, data, filters) -> None:
 
     if data is None:
-        st.error("Could not fetch data!")
+        st.error("Whoops, could not fetch data!")
 
     ticker_info = get_ticker_info(filters["selected_ticker"])
     up, down, mask = compute_streak(data["Close"])
