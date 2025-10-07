@@ -2,7 +2,7 @@ import pandas as pd
 import pytest
 
 from app.models.base import Industry, Sector, Ticker
-from app.services.finance import (get_industry_data, get_sector_data,
+from app.services.finance import (get_industry_data, get_industry_info, get_sector_data,
                                   get_ticker_data, get_ticker_info)
 
 
@@ -33,11 +33,22 @@ def test_get_ticker_data(symbol):
         "software-application",
     ],
 )
+def test_get_industry_info(industry_key):
+    industry = get_industry_info(industry_key=industry_key)
+    assert isinstance(industry, Industry)
+
+@pytest.mark.parametrize(
+    "industry_key",
+    [
+        "semiconductors",
+        "software-application",
+    ],
+)
 def test_get_industry_data(industry_key):
     data = get_industry_data(industry_key=industry_key)
-    assert isinstance(data, Industry)
-    assert isinstance(data.top_performing, pd.DataFrame)
-    assert isinstance(data.top_growing, pd.DataFrame)
+    assert isinstance(data, pd.DataFrame)
+    # assert isinstance(data.top_performing, pd.DataFrame)
+    # assert isinstance(data.top_growing, pd.DataFrame)
 
 
 def test_get_sector_data(sectors):
