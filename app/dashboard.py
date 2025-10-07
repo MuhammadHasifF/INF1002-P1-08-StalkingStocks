@@ -7,7 +7,8 @@ from pandas import DataFrame
 from plotly.subplots import make_subplots
 
 # from app.engine.summary import generate_sector_summary
-from app.services.core import compute_max_profit, compute_sdr, compute_sma, compute_streak
+from app.services.core import (compute_max_profit, compute_sdr, compute_sma,
+                               compute_streak)
 
 from .services.finance import (get_industry_data, get_industry_info,
                                get_sector_data, get_sectors, get_ticker_data,
@@ -53,7 +54,7 @@ def display_industry_overview(column, industries) -> None:
     industry_weights = {
         format_name(ind): get_industry_info(ind).market_weight for ind in industries
     }
-
+    
     # industry_col.write(industry_weights)
     df = DataFrame(list(industry_weights.items()), columns=["Sub-Industry", "Weight"])
     # df["Weight"] = df["Weight"] * 100  # convert to %
@@ -74,9 +75,9 @@ def display_industry_overview(column, industries) -> None:
 
 
 def display_filters(column, industries, top_companies) -> dict[str, Any]:
-    selected_industry = column.selectbox(
-        "Choose an industry", industries, format_func=format_name
-    )
+    # selected_industry = column.selectbox(
+    #     "Choose an industry", industries, format_func=format_name
+    # )
 
     # selected_top = filter_col.selectbox(
     #     "Select a list",
@@ -133,7 +134,7 @@ def display_filters(column, industries, top_companies) -> dict[str, Any]:
 
     # can change to dataclass/basemodel
     filters = {
-        "selected_industry": selected_industry,
+        # "selected_industry": selected_industry,
         "selected_ticker": selected_ticker,
         "selected_horizon": (start, end),
         "selected_interval": selected_interval,
@@ -145,40 +146,46 @@ def display_filters(column, industries, top_companies) -> dict[str, Any]:
     return filters
 
 
+def display_basic_price_info(ticker_info, ticker_data):
+    close = ticker_data["Close"]
+    open = ticker_data["Open"]
+    high = ticker_data["High"]
+    low = ticker_data["Low"]
+    sdr = compute_sdr(close)
+
+    latest_price = ticker_info.price
+    latest_return = sdr.iloc[-1] * 100
+    previous_close = close.iloc[-2]
+    absolute_change = latest_price - previous_close
+    latest_open = open[-1]
+    days_range = f"{low[-1]:.2f} - {high[-1]:.2f}"
+
+    st.metric(
+        "Price", f"{latest_price:.2f} USD", f"{latest_return:.2f} %", border=False
+    )
+    st.metric("Abs. Change", f"{absolute_change:.2f} USD", border=False)
+    st.metric("Today's Open", f"{latest_open:.2f} USD", border=False)
+    st.metric("Day's Range", days_range, border=False)
+
+    # max_profit = compute_max_profit(ticker_data["Close"])
+    # st.metric("Max Profit", f"{max_profit:.2f} USD")
+
+
 def display_graphs(column, data, filters) -> None:
     ticker_info = get_ticker_info(filters["selected_ticker"])
     up, down, mask = compute_streak(data["Close"])
-
-    close = data["Close"]
-    sdr = compute_sdr(close)
+    #
+    # close = data["Close"]
 
     display_name = f"{ticker_info.long_name} ({ticker_info.symbol})"
-    latest_price = close.iloc[-1]
-    latest_return = sdr.iloc[-1] * 100
-    previous_close = close.iloc[-2]
 
-    max_profit = compute_max_profit(close)
+    # max_profit = compute_max_profit(close)
 
     column.subheader(display_name)
 
-    st.write(ticker_info)
-
     row = column.container(horizontal=True)
     with row:
-        # st.write(ticker_info.price, latest_price)
-        st.metric(
-            "Price", f"{latest_price:.2f} USD", f"{latest_return:.2f} %", border=False
-        )
-
-        st.metric(
-            "Previous Close", f"{previous_close:.2f} USD", border=False
-        )
-        # st.metric("Mkt. Cap.", f"{up} days", "", border=False)
-        # st.metric("Longest Up", f"{up} days", "", border=False)
-        # should i put this here or elsewhere?
-        st.metric("Longest Up", f"{up}", border=False)
-        st.metric("Longest Down", f"{down}", border=False)
-        st.metric("Max Profit", f"{max_profit:.2f}")
+        display_basic_price_info(ticker_info, data)
 
     if data is None:
         column.error("No price data was found. Try again.")
@@ -223,21 +230,21 @@ def display_graphs(column, data, filters) -> None:
                 col=1,
             )
 
-            # # Add static annotation (paper coordinates)
-            # fig.add_annotation(
-            #     x=0.02,
-            #     y=0.98,  # 2% from left, 2% from top
-            #     xref="paper",
-            #     yref="paper",  # relative to figure, not data
-            #     text=f"📈 Longest Up Run: {up} days<br>📉 Longest Down Run: {down} days",
-            #     showarrow=False,
-            #     font=dict(size=13, color="black"),
-            #     align="left",
-            #     bgcolor="rgba(255,255,255,0.6)",  # semi-transparent background for visibility
-            #     bordercolor="black",
-            #     borderwidth=1,
-            #     borderpad=4,
-            # )
+            # Add static annotation (paper coordinates)
+            fig.add_annotation(
+                x=0.02,
+                y=0.98,  # 2% from left, 2% from top
+                xref="paper",
+                yref="paper",  # relative to figure, not data
+                text=f"📈 Longest Up Run: {up} days<br>📉 Longest Down Run: {down} days",
+                showarrow=False,
+                font=dict(size=13, color="black"),
+                align="left",
+                bgcolor="rgba(255,255,255,0.6)",  # semi-transparent background for visibility
+                bordercolor="black",
+                borderwidth=1,
+                borderpad=4,
+            )
 
         else:
             marker_colors = "gray"  # arbitrary color, wont show up anyways
@@ -285,7 +292,7 @@ def display_graphs(column, data, filters) -> None:
         )
 
         column.plotly_chart(fig)
-        with column.expander(f"{display_name} Overview - {ticker_info.industry} / {ticker_info.sector}"):
+        with column.expander(f"{display_name} Overview"):
             st.write(ticker_info.description)
 
 
@@ -325,5 +332,3 @@ def run_dashboard():
 
     display_graphs(graph_col, ticker_data, filters)
 
-    max_profit = compute_max_profit(ticker_data['Close'])
-    st.write(max_profit)
