@@ -1,7 +1,7 @@
 import pytest
 from pydantic import ValidationError
 
-from app.models.base import Ticker
+from src.models.base import Ticker
 
 
 @pytest.mark.parametrize(

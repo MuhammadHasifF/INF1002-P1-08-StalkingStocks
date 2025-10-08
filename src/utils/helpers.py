@@ -18,7 +18,7 @@ from typing import Any, Callable, ParamSpec, TypeVar
 import pandas as pd
 import yfinance as yf
 
-from ..models.base import Industry, Sector, Ticker
+from src.models.base import Industry, Sector, Ticker
 
 # Configure logging
 logging.basicConfig(
@@ -26,18 +26,43 @@ logging.basicConfig(
 )
 
 
-def has_null_values(df: pd.DataFrame) -> bool:
-    """Checks for null values"""
-    return df.isnull().values.any()
+def format_date(date: date) -> str:
+    return date.strftime("%b %d, %Y")  # e.g. Oct 08, 2025
 
 
 def format_name(name: str) -> str:
     """Formats name of sector/industry to be usable by API"""
     # replace dashes
     name = name.replace("-", " ")
-    # replace underscores 
+    # replace underscores
     name = name.replace("_", " ")
     return name.title()
+
+
+def format_large_number(n: int | float) -> str:
+    """
+    Convert a large numeric value into a human-readable string with suffixes.
+
+    Parameters:
+        n (int | float ): The numeric value to format.
+
+    Returns:
+        A string representing the number in a shortened, human-readable format:
+        - Thousands (K) for numbers >= 1,000
+        - Millions (M) for numbers >= 1,000,000
+        - Billions (B) for numbers >= 1,000,000,000
+        - Trillions (T) for numbers >= 1,000,000,000,000
+        - Otherwise, returns the number as a string
+    """
+    if n >= 1_000_000_000_000:
+        return f"{n/1_000_000_000_000:.2f}T"
+    elif n >= 1_000_000_000:
+        return f"{n/1_000_000_000:.2f}B"
+    elif n >= 1_000_000:
+        return f"{n/1_000_000:.2f}M"
+    elif n >= 1_000:
+        return f"{n/1_000:.2f}K"
+    return str(n)
 
 
 def rolling_window(
@@ -109,11 +134,11 @@ def yf_industry_to_model(industry_obj: yf.Industry) -> Industry:
     extra_info = industry_obj.ticker.get_info()
 
     return Industry(
-        description=overview.get('description'),
-        employee_count=overview.get('employee_count'),
-        market_cap=overview.get('market_cap'),
-        market_weight=overview.get('market_weight'),
-        pct_change=extra_info.get('regularMarketChangePercent')
+        description=overview.get("description"),
+        employee_count=overview.get("employee_count"),
+        market_cap=overview.get("market_cap"),
+        market_weight=overview.get("market_weight"),
+        pct_change=extra_info.get("regularMarketChangePercent"),
     )
 
 
@@ -129,32 +154,6 @@ def yf_sector_to_model(sector_obj: yf.Sector) -> Sector:
         top_mutual_funds=sector_obj.top_mutual_funds.keys(),
         industries=sector_obj.industries.index,
     )
-
-
-def format_large_number(n: int | float) -> str:
-    """
-    Convert a large numeric value into a human-readable string with suffixes.
-
-    Parameters:
-        n (int | float ): The numeric value to format.
-
-    Returns:
-        A string representing the number in a shortened, human-readable format:
-        - Thousands (K) for numbers >= 1,000
-        - Millions (M) for numbers >= 1,000,000
-        - Billions (B) for numbers >= 1,000,000,000
-        - Trillions (T) for numbers >= 1,000,000,000,000
-        - Otherwise, returns the number as a string
-    """
-    if n >= 1_000_000_000_000:
-        return f"{n/1_000_000_000_000:.2f}T"
-    elif n >= 1_000_000_000:
-        return f"{n/1_000_000_000:.2f}B"
-    elif n >= 1_000_000:
-        return f"{n/1_000_000:.2f}M"
-    elif n >= 1_000:
-        return f"{n/1_000:.2f}K"
-    return str(n)
 
 
 P = ParamSpec("P")

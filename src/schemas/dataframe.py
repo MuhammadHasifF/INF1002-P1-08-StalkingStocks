@@ -1,5 +1,5 @@
 """
-market.py
+dataframe.py
 
 This module defines dataframe models/schema used to validate OHLCV
 (open, high, low, close, volume) data retrieved from yfinance.
@@ -20,42 +20,6 @@ from typing import TypeAlias
 from pandera.dtypes import DateTime
 from pandera.pandas import DataFrameModel, Field
 from pandera.typing import DataFrame, Series
-
-
-class IndustryData(DataFrameModel):
-    """"""
-    open: Series[float] = Field(alias="Open")
-    high: Series[float] = Field(alias="High")
-    low: Series[float] = Field(alias="Low")
-    close: Series[float] = Field(alias="Close")
-    volume: Series[int] = Field(alias="Volume")
-    dividends: Series[float] = Field(alias="Dividends")
-    stock_splits: Series[float] = Field(alias="Stock Splits")
-
-
-class TopPerforming(DataFrameModel):
-    """Schema for validating top-performing company data."""
-
-    name: Series[str] = Field(nullable=True)
-    ytd_return: Series[float] = Field(nullable=True)
-    last_price: Series[float] = Field(nullable=True)
-    target_price: Series[float] = Field(nullable=True)
-
-    class Config:
-        coerce = True
-        strict = False  # future proof toallow extra columns
-
-
-class TopGrowing(DataFrameModel):
-    """Schema for validating top-performing company data."""
-
-    name: Series[str] = Field(nullable=True)
-    ytd_return: Series[float] = Field(nullable=True)
-    growth_estimate: Series[float] = Field(nullable=True)
-
-    class Config:
-        coerce = True
-        strict = False  # future proof toallow extra columns
 
 
 class SingleStockData(DataFrameModel):

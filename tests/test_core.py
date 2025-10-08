@@ -1,6 +1,6 @@
 import pandas as pd
 
-from app.services.core import (compute_max_profit, compute_sdr, compute_sma,
+from src.services.core import (compute_max_profit, compute_sdr, compute_sma,
                                compute_streak)
 
 

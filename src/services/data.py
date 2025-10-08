@@ -10,7 +10,7 @@ Notes:
 
 import pandas as pd
 
-from ..utils.helpers import timer
+from src.utils.helpers import timer
 
 
 @timer
@@ -73,6 +73,11 @@ def remove_non_trading_days(series: pd.Series) -> pd.Series:
         s.index = pd.to_datetime(s.index)
     return s[s.index.dayofweek < 5]  # 0=Mon ... 4=Fri
 
+
+def clean_data(series: pd.Series) -> pd.Series:
+    series = check_missing_values(series)
+    cleaned = remove_non_trading_days(series)
+    return cleaned
 
 @timer
 def clean_outliers_iqr(

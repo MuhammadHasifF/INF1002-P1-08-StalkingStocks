@@ -17,12 +17,11 @@ from typing import Any, Sequence
 import pandas as pd
 import yfinance as yf
 
-from ..constants.sectors import SECTORS
-from ..models.base import Industry, Sector, Ticker
-from ..schemas.dataframe import (IndustryData, MultipleStockData,
-                                 SingleStockData, StockDataFrame, TopGrowing,
-                                 TopPerforming)
-from ..utils.helpers import (timer, yf_industry_to_model, yf_sector_to_model,
+from src.constants.sectors import SECTORS
+from src.models.base import Industry, Sector, Ticker
+from src.schemas.dataframe import (MultipleStockData,
+                                 SingleStockData, StockDataFrame)
+from src.utils.helpers import (timer, yf_industry_to_model, yf_sector_to_model,
                              yf_ticker_to_model)
 
 
@@ -48,19 +47,6 @@ def get_sector_data(sector_key: str) -> Sector:
         raise RuntimeError(f"Failed to retrieve data for {sector_key}: {e}")
 
     return yf_sector_to_model(yf_sector)
-
-
-@timer
-def get_industry_data(industry_key: str, **kwargs: Any) -> IndustryData:
-    try:
-        yf_industry = yf.Industry(key=industry_key)
-    except Exception as e:
-        raise RuntimeError(f"Failed to retrieve data for {industry_key}: {e}")
-
-    data: pd.DataFrame = yf_industry.ticker.history(**kwargs)
-    validated: IndustryData = IndustryData.validate(data)
-
-    return validated
 
 
 @timer
@@ -121,8 +107,8 @@ def get_ticker_data(
     Yahoo Finance.
 
     Args:
-        ticker_symbols (list[str]):
-            A list of ticker symbols (e.g., ["AAPL", "MSFT", "GOOG"]).
+        ticker_symbols (str | list[str]):
+            A single ticker symbol or list of ticker symbols (e.g., ["AAPL", "MSFT", "GOOG"]).
         **kwargs (Any):
             Additional keyword arguments passed to `yfinance.download`,
             such as `start`, `end`, `interval`, etc.
