@@ -4,12 +4,13 @@ import pandas as pd
 import streamlit as st
 
 from src.services.core import (compute_max_profit, compute_sdr, compute_sma,
-                             compute_streak)
-from src.services.finance import (get_industry_info, get_ticker_data, get_ticker_info)
+                               compute_streak)
+from src.services.finance import (get_industry_info, get_ticker_data,
+                                  get_ticker_info)
 from src.ui.charts import (add_indicators, create_figure, set_candlechart,
-                         set_line_trend_chart, set_linechart, set_treemap)
+                           set_line_trend_chart, set_linechart, set_treemap)
 from src.utils.helpers import (format_date, format_large_number, format_name,
-                             rolling_window, timer)
+                               rolling_window, timer)
 
 
 def display_sector_overview(column, sector_data) -> None:
@@ -61,7 +62,7 @@ def display_industry_overview(column, industries) -> None:
     column.plotly_chart(fig, use_container_width=True)
 
 
-def display_filters(column, industries, top_companies) -> dict[str, Any]:
+def display_filters(column, top_companies) -> dict[str, Any]:
     selected_ticker = column.selectbox(
         "Select a ticker",
         top_companies,
@@ -138,6 +139,7 @@ def display_filters(column, industries, top_companies) -> dict[str, Any]:
     return filters
 
 
+@st.cache_data
 def display_basic_price_info(ticker_info, ticker_data):
     close = ticker_data["Close"]
     open = ticker_data["Open"]
@@ -224,5 +226,3 @@ def display_charts(column, filters) -> None:
 
         with column.expander(f"{display_name} Overview"):
             st.write(ticker_info.description)
-
-
