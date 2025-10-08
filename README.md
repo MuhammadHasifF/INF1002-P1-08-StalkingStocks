@@ -57,45 +57,41 @@ python -m pytest -v
 
 ## Project Structure
 
-```markdown
+```bash
 .
-├── app.py                     # Main entry script for the project.
-├── app
-│   ├── dashboard.py           # Main dashboard logic and Streamlit interface functions
+├── app.py                      # Main entry script for the project.
+├── src/                        # Main application source code
 │   ├── __init__.py
-│   ├── constants
+│   ├── dashboard.py
+│   ├── constants/              # Static values and domain-specific mappings
 │   │   ├── __init__.py
-│   │   └── sectors.py         # Contains sector-related constants and mappings
-│   ├── models
+│   │   └── sectors.py
+│   ├── models/                 # Core data models and base classes
 │   │   ├── __init__.py
-│   │   └── base.py            # Core data models (e.g., Industry, Sector, Ticker)
-│   ├── schemas
+│   │   └── base.py
+│   ├── schemas/                # Data validation and dataframe schema definitions
 │   │   ├── __init__.py
-│   │   └── dataframe.py       # Schema definitions for tabular data structures
-│   ├── services
+│   │   └── dataframe.py
+│   ├── services/               # Business logic and data processing modules
 │   │   ├── __init__.py
-│   │   ├── core.py            # Core business logic functions (e.g., compute_max_profit, compute_sdr)
-│   │   ├── data.py            # Data handling functions (e.g., load, transform, save)
-│   │   └── finance.py         # Finance-related computations and analytics
-│   └── utils
+│   │   ├── core.py
+│   │   ├── data.py
+│   │   └── finance.py
+│   ├── ui/                     # Visualization and user interface components
+│   │   ├── __init__.py
+│   │   ├── charts.py
+│   │   ├── filters.py
+│   │   └── overview.py
+│   └── utils/                  # General-purpose helper functions
 │       ├── __init__.py
-│       └── helpers.py         # General helper functions (e.g., timers, logging, small utilities)
-├── docs
-│   ├── Project Proposal.pdf
-│   ├── Project Specifications and Rubrics.pdf
-│   └── System Design.pdf
-├── notebook
-│   ├── algorithms.ipynb
-│   ├── data.ipynb
-│   ├── guide.ipynb
-│   └── programming notes.ipynb
+│       └── helpers.py
+├── tests/                      # Unit tests
+│   ├── conftest.py
+│   ├── test_core.py
+│   ├── test_finance.py
+│   └── test_models.py
+├── docs/
+├── notebook/
 ├── README.md
-├── requirements.txt
-└── tests
-    ├── conftest.py
-    ├── test_core.py
-    ├── test_finance.py
-    └── test_models.py
-
-10 directories, 28 files
+└── requirements.txt
 ```
