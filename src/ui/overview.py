@@ -48,7 +48,7 @@ def create_industry_overview(industries):
 
 def display_industry_overview(column, industries) -> None:
     column.subheader("Sector Breakdown")
-
+    column.info("This shows a sector's industry weights and how they performed today.", icon=":material/info:")
     industry_info = create_industry_overview(industries)
     summary_df = pd.DataFrame.from_dict(industry_info, orient="index").reset_index()
     summary_df.rename(columns={"index": "industry"}, inplace=True)
