@@ -5,7 +5,8 @@ import streamlit as st
 
 from src.services.core import (compute_max_profit, compute_sdr, compute_sma,
                                compute_streak)
-from src.services.finance import (get_industry_info, get_ticker_data,
+from src.services.finance import (get_industry_info, get_sector_data,
+                                  get_sectors, get_ticker_data,
                                   get_ticker_info)
 from src.ui.charts import (add_indicators, create_figure, set_candlechart,
                            set_line_trend_chart, set_linechart, set_treemap)
@@ -13,20 +14,34 @@ from src.utils.helpers import (format_date, format_large_number, format_name,
                                timer)
 
 
-def display_sector_overview(column, sector_data) -> None:
+def display_sector_overview(column) -> list[str]:
+    sectors: Sequence[str] = get_sectors()
+
+    selected_sector = column.selectbox(
+        "Choose a sector", 
+        options=sectors, 
+        index=9, 
+        format_func=format_name
+    )
+    sector_data = get_sector_data(selected_sector)
+
     overview = sector_data.overview
 
     column.subheader(sector_data.name)
     column.text(overview["description"])
 
     left, middle, right = column.columns(3, border=True)
+
     left.metric("Companies", overview["companies_count"])
     middle.metric("Industries", overview["industries_count"])
     right.metric("Employees", format_large_number(overview["employee_count"]))
 
     left, right = column.columns(2, border=True)
+
     left.metric("Market Cap", f"{format_large_number(overview["market_cap"])} USD")
     right.metric("Market Weight", f"{overview['market_weight']*100:.2f}%")
+
+    return sector_data
 
 
 @st.cache_data
@@ -48,7 +63,10 @@ def create_industry_overview(industries):
 
 def display_industry_overview(column, industries) -> None:
     column.subheader("Sector Breakdown")
-    column.info("This shows a sector's industry weights and how they performed today.", icon=":material/info:")
+    column.info(
+        "This shows a sector's industry weights and how they performed today.",
+        icon=":material/info:",
+    )
     industry_info = create_industry_overview(industries)
     summary_df = pd.DataFrame.from_dict(industry_info, orient="index").reset_index()
     summary_df.rename(columns={"index": "industry"}, inplace=True)
