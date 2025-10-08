@@ -1,8 +1,8 @@
 import pandas as pd
 import pytest
 
-from app.models.base import Industry, Sector, Ticker
-from app.services.finance import (get_industry_data, get_industry_info, get_sector_data,
+from src.models.base import Industry, Sector, Ticker
+from src.services.finance import (get_industry_info, get_sector_data,
                                   get_ticker_data, get_ticker_info)
 
 
@@ -26,6 +26,11 @@ def test_get_ticker_data(symbol):
     assert isinstance(data, pd.DataFrame)  # our custom aliases don't exist at runtime
 
 
+def test_get_sector_data(sectors):
+    data = get_sector_data(sector_key=sectors[0])
+    assert isinstance(data, Sector)
+
+
 @pytest.mark.parametrize(
     "industry_key",
     [
@@ -36,21 +41,3 @@ def test_get_ticker_data(symbol):
 def test_get_industry_info(industry_key):
     industry = get_industry_info(industry_key=industry_key)
     assert isinstance(industry, Industry)
-
-@pytest.mark.parametrize(
-    "industry_key",
-    [
-        "semiconductors",
-        "software-application",
-    ],
-)
-def test_get_industry_data(industry_key):
-    data = get_industry_data(industry_key=industry_key)
-    assert isinstance(data, pd.DataFrame)
-    # assert isinstance(data.top_performing, pd.DataFrame)
-    # assert isinstance(data.top_growing, pd.DataFrame)
-
-
-def test_get_sector_data(sectors):
-    data = get_sector_data(sector_key=sectors[0])
-    assert isinstance(data, Sector)

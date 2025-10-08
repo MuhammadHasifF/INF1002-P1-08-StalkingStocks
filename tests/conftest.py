@@ -1,7 +1,7 @@
 import pandas as pd
 import pytest
 
-from app.constants.sectors import SECTORS
+from src.constants.sectors import SECTORS
 
 
 @pytest.fixture
