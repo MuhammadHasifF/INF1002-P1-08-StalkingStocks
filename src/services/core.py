@@ -24,6 +24,7 @@ Notes:
 import numpy as np
 import pandas as pd
 
+from src.services.data import clean_data
 from src.utils.helpers import timer
 
 
@@ -65,6 +66,7 @@ def compute_sma(close: pd.Series, window: int = 5) -> pd.Series:
         https://www.investopedia.com/ask/answers/122414/what-are-most-common-periods-used-creating-moving-average-ma-lines.asp
     """
     # Convert pandas input to NumPy array for computation (manual algorithms)
+    close = clean_data(close)
     values: np.ndarray = close.values
     n: int = len(values)
     out: np.ndarray = np.full(n, np.nan, dtype=float)
@@ -136,6 +138,7 @@ def compute_streak(close: pd.Series) -> tuple[int, int, pd.Series]:
     """
 
     # Convert pandas input to NumPy array for computation (manual algorithms)
+    close = clean_data(close)
     values: np.ndarray = close.values
     n: int = len(values)
 
@@ -233,6 +236,7 @@ def compute_sdr(close: pd.Series) -> pd.Series:
     """
 
     # Convert pandas input to NumPy array for computation (manual algorithms)
+    close = clean_data(close)
     values: np.ndarray = close.values
     n: int = len(values)
     daily_returns: list[float | None] = [
@@ -295,6 +299,7 @@ def compute_max_profit(close: pd.Series) -> float:
         float total profit from optimal trading strategy
     """
     # Convert pandas input to NumPy array for computation (manual algorithms)
+    close = clean_data(close)
     values: np.ndarray = close.values
     n: int = len(values)
     total_profit: float = 0.0

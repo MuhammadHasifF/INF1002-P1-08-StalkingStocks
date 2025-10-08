@@ -74,6 +74,11 @@ def remove_non_trading_days(series: pd.Series) -> pd.Series:
     return s[s.index.dayofweek < 5]  # 0=Mon ... 4=Fri
 
 
+def clean_data(series: pd.Series) -> pd.Series:
+    series = check_missing_values(series)
+    cleaned = remove_non_trading_days(series)
+    return cleaned
+
 @timer
 def clean_outliers_iqr(
     series: pd.Series, replace_with_nan: bool = True, k: float = 3.0
