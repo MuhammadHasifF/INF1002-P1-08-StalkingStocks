@@ -17,11 +17,11 @@ from typing import Any, Sequence
 import pandas as pd
 import yfinance as yf
 
-from ..constants.sectors import SECTORS
-from ..models.base import Industry, Sector, Ticker
-from ..schemas.dataframe import (MultipleStockData,
+from src.constants.sectors import SECTORS
+from src.models.base import Industry, Sector, Ticker
+from src.schemas.dataframe import (MultipleStockData,
                                  SingleStockData, StockDataFrame)
-from ..utils.helpers import (timer, yf_industry_to_model, yf_sector_to_model,
+from src.utils.helpers import (timer, yf_industry_to_model, yf_sector_to_model,
                              yf_ticker_to_model)
 
 
