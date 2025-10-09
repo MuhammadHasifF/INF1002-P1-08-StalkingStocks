@@ -80,6 +80,68 @@ def clean_data(series: pd.Series) -> pd.Series:
     return cleaned
 
 @timer
+def outlier_mask_iqr(series: pd.Series, k: float = 3.0) -> pd.Series:
+    """
+    Detect potential outliers in a numeric Series using Tukey IQR fences.
+    Detection-only: returns a boolean mask aligned to `series` (True = flagged).
+
+    RATIONALE:
+    - For stock analysis, don’t silently alter values. Flag them and let users decide.
+    - IQR is robust to spikes and doesn’t assume normality.
+
+    METHOD:
+        Q1 = 25th percentile, Q3 = 75th percentile, IQR = Q3 - Q1
+        Lower = Q1 - k*IQR, Upper = Q3 + k*IQR
+        Flag if value < Lower or value > Upper
+
+    COMPLEXITY:
+    - O(n) for quantiles + vectorized mask; returns boolean Series (same index/len).
+    """
+    q1 = series.quantile(0.25)
+    q3 = series.quantile(0.75)
+    iqr = q3 - q1
+    lower = q1 - k * iqr
+    upper = q3 + k * iqr
+    return ((series < lower) | (series > upper)).astype(bool).reindex(series.index)
+
+
+@timer
+def outlier_bounds_iqr(series: pd.Series, k: float = 3.0) -> dict:
+    """
+    Return Tukey IQR stats for UI/tooltips: Q1, Q3, IQR, Lower, Upper, k.
+    """
+    q1 = series.quantile(0.25)
+    q3 = series.quantile(0.75)
+    iqr = q3 - q1
+    return {
+        "q1": q1,
+        "q3": q3,
+        "iqr": iqr,
+        "lower": q1 - k * iqr,
+        "upper": q3 + k * iqr,
+        "k": k,
+    }
+
+
+@timer
+def clean_data_with_mask(series: pd.Series, k: float = 3.0):
+    """
+    Compose existing cleaning + outlier detection (no mutation of values).
+
+    FLOW:
+      1) check_missing_values(series)
+      2) remove_non_trading_days(...)
+      3) outlier_mask_iqr(...)
+
+    Returns:
+      cleaned: pd.Series        # after gaps filled + weekdays filter
+      mask:    pd.Series[bool]  # True where cleaned is flagged by IQR
+    """
+    cleaned = remove_non_trading_days(check_missing_values(series))
+    mask = outlier_mask_iqr(cleaned, k=k)
+    return cleaned, mask
+
+@timer
 def clean_outliers_iqr(
     series: pd.Series, replace_with_nan: bool = True, k: float = 3.0
 ) -> pd.Series:
