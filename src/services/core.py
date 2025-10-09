@@ -31,40 +31,29 @@ from src.utils.helpers import timer
 @timer
 def compute_sma(close: pd.Series, window: int = 5) -> pd.Series:
     """
-    Compute simple moving averages (SMAs) manually using a sliding window.
+      Simple moving average with a fixed sliding window.
 
-    RATIONALE:
-    - SMA smooths out price fluctuations by averaging the last N closes.
-    - Common windows: 5 (short-term), 20 (≈1 trading month), 50 (medium-term).
-    - Used to identify market trends and reduce noise in time-series data.
+      Parameters
+      ----------
+      close : pd.Series
+          Closing prices (aligned index).
+      window : int, default 5
+          Lookback length.
 
-    EFFICIENCY ANALYSIS:
-    - Time Complexity: O(n) — single pass through all prices.
-    - Space Complexity: O(n) — stores output values.
-    - Algorithmic Efficiency: Optimal — uses sliding window to avoid recomputation.
+      Returns
+      -------
+      pd.Series
+          SMA aligned to `close` (NaN until enough data).
+      """
+    # RATIONALE (dev note):
+    # - SMA smooths noise by averaging the last N closes (e.g., 5, 20, 50).
+    # - Typical use: trend detection / denoising.
+    #
+    # EFFICIENCY (dev note):
+    # - O(n) time: single pass with a running sum (add new, drop old).
+    # - O(n) space: output series; extra space is O(1).
+    #   Avoids recomputing sums for each window.
 
-    Why O(n) time complexity?
-    - Each price is processed once.
-    - Running sum updated in constant time (add new, remove old).
-    - Avoids nested loops or recomputing averages from scratch.
-
-    Why O(n) space complexity?
-    - Output array same size as input.
-    - Only constant extra variables needed (running_sum).
-
-    Formula:
-        SMA_t = (P_t + P_{t-1} + ... + P_{t-N+1}) / N
-
-    Args:
-        close (pd.Series): Closing prices
-        window (int): Lookback window size (5, 20, 50, etc.)
-
-    Returns:
-        pd.Series of SMA values (NaN where insufficient data)
-
-    Reference:
-        https://www.investopedia.com/ask/answers/122414/what-are-most-common-periods-used-creating-moving-average-ma-lines.asp
-    """
     # Convert pandas input to NumPy array for computation (manual algorithms)
     close = clean_data(close)
     values: np.ndarray = close.values
@@ -96,46 +85,26 @@ def compute_sma(close: pd.Series, window: int = 5) -> pd.Series:
 @timer
 def compute_streak(close: pd.Series) -> tuple[int, int, pd.Series]:
     """
-    Compute longest upward and downward streaks of consecutive days manually.
+       Longest up/down streaks and a daily direction mask.
 
-    RATIONALE:
-    - Measures persistence of trends (momentum vs. reversals).
-    - Up run = consecutive days with Close_t > Close_{t-1}.
-    - Down run = consecutive days with Close_t < Close_{t-1}.
-    - Flat days (Close_t == Close_{t-1}) are neutral — they break streaks but do not count.
-    - Adds a direction mask (-1, 0, 1) for visualisation of trend segments in plots.
+       Parameters
+       ----------
+       close : pd.Series
+           Closing prices.
 
-    EFFICIENCY ANALYSIS:
-    - Time Complexity: O(n) — single pass through data.
-    - Space Complexity: O(1) auxiliary (O(n) for returned mask array).
-    - Algorithmic Efficiency: Optimal — minimal variable tracking, no redundant passes.
-
-    Why O(n) time complexity?
-    - Each price compared once to previous.
-    - Update streak counters in constant time.
-
-    Why O(1) auxiliary space complexity?
-    - Uses only four counters (longest_up, longest_down, current_streak, direction).
-    - Mask array is part of expected output, not auxiliary storage.
-
-    Formula:
-        Up streak: max consecutive (Close_t > Close_{t-1})
-        Down streak: max consecutive (Close_t < Close_{t-1})
-        Mask: 1 = Up, -1 = Down, 0 = Flat
-
-    Args:
-        close (pd.Series): Closing prices
-
-    Returns:
-        tuple[int, int, pd.Series]: (longest_up, longest_down, trend_mask)
-            - longest_up: longest upward run length.
-            - longest_down: longest downward run length.
-            - trend_mask: Series of daily direction values for plotting.
-
-    Reference:
-        Wald–Wolfowitz Runs Test (handling ties):
-        https://en.wikipedia.org/wiki/Wald%E2%80%93Wolfowitz_runs_test
-    """
+       Returns
+       -------
+       (int, int, pd.Series)
+           (longest_up, longest_down, trend_mask)
+           trend_mask ∈ {1 (up), 0 (flat), -1 (down)} aligned to `close`.
+       """
+    # RATIONALE (dev note):
+    # - Up: Close_t > Close_{t-1}; Down: < ; Flat: == (breaks streaks).
+    # - Useful for momentum diagnostics and run-length visualization.
+    #
+    # EFFICIENCY (dev note):
+    # - O(n) time; O(1) auxiliary state (mask is intended output).
+    # - Single pass, minimal counters.
 
     # Convert pandas input to NumPy array for computation (manual algorithms)
     close = clean_data(close)
@@ -196,44 +165,23 @@ def compute_streak(close: pd.Series) -> tuple[int, int, pd.Series]:
 @timer
 def compute_sdr(close: pd.Series) -> pd.Series:
     """
-    Compute daily returns manually as percentage changes in closing price.
+       Simple daily returns (percentage change).
 
-    RATIONALE:
-    - Normalizes price movements across tickers.
-    - Used to analyze volatility, compare stocks, and calculate risk metrics.
-    - Positive = stock went up, Negative = stock went down, Zero = no change.
+       Parameters
+       ----------
+       close : pd.Series
+           Closing prices.
 
-    EFFICIENCY ANALYSIS:
-    - Time Complexity: O(n) — single pass through data.
-    - Space Complexity: O(n) — output array same size as input.
-    - Algorithmic Efficiency: Optimal — step-by-step ratio comparisons.
-
-    Why O(n) time complexity?
-    - Each pair of consecutive prices compared once.
-    - Calculation (curr - prev) / prev is constant time.
-
-    Why O(n) space complexity?
-    - Output series has same length as input.
-    - Only constant extra variables used.
-
-    Formula:
-        r_t = (P_t - P_{t-1}) / P_{t-1}
-            = P_t / P_{t-1} - 1
-
-    Edge Cases:
-    - First row has no prior price → return = None.
-    - If previous price = 0, return = None (avoids divide-by-zero).
-
-    Args:
-        close (pd.Series): Closing prices
-
-    Returns:
-        pd.Series of daily returns
-
-    Reference:
-        Pandas pct_change (we reimplemented manually):
-        https://pandas.pydata.org/docs/reference/api/pandas.Series.pct_change.html
-    """
+       Returns
+       -------
+       pd.Series
+           r_t = (P_t - P_{t-1}) / P_{t-1}; first element is None; divide-by-zero → None.
+       """
+    # RATIONALE (dev note):
+    # - Normalizes moves for comparability; basis for volatility/risk metrics.
+    #
+    # EFFICIENCY (dev note):
+    # - O(n) time; O(n) output. Constant extra vars.
 
     # Convert pandas input to NumPy array for computation (manual algorithms)
     close = clean_data(close)
@@ -262,42 +210,26 @@ def compute_sdr(close: pd.Series) -> pd.Series:
 @timer
 def compute_max_profit(close: pd.Series) -> float:
     """
-    Compute max profit (sum of rises) manually.
+    Maximum achievable profit by summing all positive day-to-day rises.
 
-    This implements the "Best Time to Buy and Sell Stock II" algorithm using a greedy approach.
+    Parameters
+    ----------
+    close : pd.Series
+        Closing prices.
 
-    EFFICIENCY ANALYSIS:
-    - Time Complexity: O(n) - single pass through data
-    - Space Complexity: O(1) - constant extra space
-    - Algorithmic Efficiency: Optimal - greedy algorithm
-
-    Why O(n) time complexity?
-    - Must examine each price pair to find profitable trades
-    - n-1 comparisons for n prices
-    - Each comparison and calculation is constant time
-
-    Why O(1) space complexity?
-    - Only uses constant extra variables (total_profit, current_price, next_price)
-    - No additional arrays or data structures needed
-    - Space usage doesn't grow with input size
-
-    Why greedy algorithm is optimal?
-    - Local optimal choice (profit from each rise) leads to global optimum
-    - No need to look ahead or backtrack
-    - Mathematical proof shows this captures all possible profits
-
-    Algorithm Source: LeetCode Problem 122 - Best Time to Buy and Sell Stock II
-    Reference: https://leetcode.com/problems/best-time-to-buy-and-sell-stock-ii/
-
-    Greedy Strategy: Buy before every price increase, sell after it.
-    This approach captures all possible profits by making a transaction whenever
-    the next day's price is higher than the current day's price.
-
-    Args:
-        close (pd.Series): closing prices
-    Returns:
-        float total profit from optimal trading strategy
+    Returns
+    -------
+    float
+        Total profit from the greedy strategy.
     """
+    # RATIONALE (dev note):
+    # - “Buy before every rise, sell after it” captures all local gains.
+    # - Equivalent to summing max(0, P_{t+1} - P_t).
+    #
+    # EFFICIENCY (dev note):
+    # - O(n) time; O(1) extra space.
+    # - Greedy is optimal here; no backtracking/lookahead required.
+
     # Convert pandas input to NumPy array for computation (manual algorithms)
     close = clean_data(close)
     values: np.ndarray = close.values
