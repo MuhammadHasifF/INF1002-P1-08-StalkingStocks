@@ -7,7 +7,7 @@ These models can be used for data validation, serialization, and
 interfacing with APIs or other data sources.
 
 Notes:
-    - Certain information fields from yfinance classes are not available, 
+    - Certain information fields from yfinance classes are not available,
     to handle this, we allow NoneTypes as value replacements.
 
 Classes:
@@ -18,9 +18,7 @@ Classes:
 
 from typing import Any
 
-from pandera.typing import DataFrame
 from pydantic import BaseModel
-from ..schemas.dataframe import TopGrowing, TopPerforming
 
 
 class Ticker(BaseModel):
@@ -39,11 +37,15 @@ class Ticker(BaseModel):
     dividend_yield: float | None
     volume: int | None
 
+
 class Industry(BaseModel):
     """Represents an industry and its top-performing companies."""
 
-    top_performing: DataFrame[TopPerforming]
-    top_growing: DataFrame[TopGrowing]
+    description: str | None
+    employee_count: int | None
+    market_cap: int | None
+    market_weight: float | None
+    pct_change: float | None
 
 
 class Sector(BaseModel):
@@ -53,6 +55,6 @@ class Sector(BaseModel):
     name: str
     overview: dict[str, Any]
     top_companies: list[str]
-    top_etfs: dict[str, str]
-    top_mutual_funds: dict[str, str | None]
+    top_etfs: list[str]
+    top_mutual_funds: list[str]
     industries: list[str]

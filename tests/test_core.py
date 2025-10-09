@@ -1,6 +1,6 @@
 import pandas as pd
 
-from app.services.core import (compute_max_profit, compute_sdr, compute_sma,
+from src.services.core import (compute_max_profit, compute_sdr, compute_sma,
                                compute_streak)
 
 
@@ -28,13 +28,20 @@ def test_compute_sma(sample_close: pd.Series) -> None:
 
 
 def test_compute_streak(sample_close: pd.Series) -> None:
-    up_streak, down_streak = compute_streak(sample_close)
+    up_streak, down_streak, mask = compute_streak(sample_close)
+    
+    # Type checks
     assert isinstance(up_streak, int)
-    assert up_streak == 99
-
     assert isinstance(down_streak, int)
+    assert isinstance(mask, pd.Series)
+
+    # Expected values (based on monotonic increasing sample_close)
+    assert up_streak == 99
     assert down_streak == 0
 
+    # Value range check for mask
+    assert all(val in (-1, 0, 1) for val in mask.unique())
+    
 
 def test_compute_sdr(sample_close: pd.Series) -> None:
     sdr: pd.Series = compute_sdr(sample_close)

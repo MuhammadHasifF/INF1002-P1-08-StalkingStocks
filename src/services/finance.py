@@ -15,14 +15,13 @@ of financial data to support dashboards, analytics, and reporting features.
 from typing import Any, Sequence
 
 import pandas as pd
-import pandera.typing as pa
 import yfinance as yf
 
-from ..constants.sectors import SECTORS
-from ..models.base import Industry, Sector, Ticker
-from ..schemas.dataframe import (MultipleStockData, SingleStockData,
-                                 StockDataFrame, TopGrowing, TopPerforming)
-from ..utils.helpers import (timer, yf_industry_to_model, yf_sector_to_model,
+from src.constants.sectors import SECTORS
+from src.models.base import Industry, Sector, Ticker
+from src.schemas.dataframe import (MultipleStockData,
+                                 SingleStockData, StockDataFrame)
+from src.utils.helpers import (timer, yf_industry_to_model, yf_sector_to_model,
                              yf_ticker_to_model)
 
 
@@ -42,13 +41,18 @@ def get_sector_data(sector_key: str) -> Sector:
     Returns:
         A Sector data model containing sector information.
     """
-    yf_sector = yf.Sector(key=sector_key)
+    try:
+        yf_sector = yf.Sector(key=sector_key)
+    except Exception as e:
+        raise RuntimeError(f"Failed to retrieve data for {sector_key}: {e}")
+
     return yf_sector_to_model(yf_sector)
 
+
 @timer
-def get_industry_data(industry_key: str) -> Industry:
+def get_industry_info(industry_key: str) -> Industry:
     """
-    Returns data on a single industry.
+    Retrieves metadata on a single industry.
 
     Note:
         - A single sector contains multiple industries.
@@ -60,11 +64,15 @@ def get_industry_data(industry_key: str) -> Industry:
     Returns:
         A Sector data model containing sector information.
     """
-    yf_industry = yf.Industry(key=industry_key)
+    try:
+        yf_industry = yf.Industry(key=industry_key)
+    except Exception as e:
+        raise RuntimeError(f"Failed to retrieve data for {industry_key}: {e}")
+
     data: Industry = yf_industry_to_model(yf_industry)
 
-    data.top_performing = TopPerforming.validate(data.top_performing)
-    data.top_growing = TopGrowing.validate(data.top_growing)
+    # data.top_performing = TopPerforming.validate(data.top_performing)
+    # data.top_growing = TopGrowing.validate(data.top_growing)
 
     return data
 
@@ -82,19 +90,25 @@ def get_ticker_info(ticker_symbol: str, **kwargs: Any) -> Ticker:
     Returns:
         Ticker Data Model
     """
-    kwargs.pop("symbol", None)  # remove if exists
-    yf_ticker = yf.Ticker(ticker=ticker_symbol, **kwargs)
+
+    try:
+        yf_ticker = yf.Ticker(ticker=ticker_symbol, **kwargs)
+    except Exception as e:
+        raise RuntimeError(f"Failed to retrieve info for {ticker_symbol}: {e}")
+
     return yf_ticker_to_model(yf_ticker)
 
 
-def get_ticker_data(ticker_symbols: str | list[str], **kwargs: Any) -> StockDataFrame:
+def get_ticker_data(
+    ticker_symbols: str | list[str], **kwargs: Any
+) -> StockDataFrame | None:
     """
     Retrieve historical market data for one or multiple ticker symbols using
     Yahoo Finance.
 
     Args:
-        ticker_symbols (list[str]):
-            A list of ticker symbols (e.g., ["AAPL", "MSFT", "GOOG"]).
+        ticker_symbols (str | list[str]):
+            A single ticker symbol or list of ticker symbols (e.g., ["AAPL", "MSFT", "GOOG"]).
         **kwargs (Any):
             Additional keyword arguments passed to `yfinance.download`,
             such as `start`, `end`, `interval`, etc.
@@ -103,53 +117,20 @@ def get_ticker_data(ticker_symbols: str | list[str], **kwargs: Any) -> StockData
         A validated dataframe of OHLCV (open, high, low, close, volume) data
         from yfinance.
     """
-    kwargs.pop("tickers", None)  # remove if exists
     data: pd.DataFrame = yf.download(tickers=ticker_symbols, **kwargs)
+
+    if data.empty:
+        return None
 
     # Handle single vs multi-ticker cases:
     if isinstance(ticker_symbols, str):
         data.columns = data.columns.droplevel(1)
+        # Remove non-trading days (where data is missing)
+        data = data.dropna(subset=["Open", "Close"])  # or just ["Volume"]
         data: StockDataFrame = SingleStockData.validate(data)
     else:
         # Collapse it into flat columns for validation
-        data: StockDataFrame = (
-            data.stack(level=-1, future_stack=True)
-            .reset_index()
-            .rename(columns={"level_1": "Ticker"})
-        )
+        data = data.stack(level=-1).reset_index().rename(columns={"level_1": "Ticker"})
         data: StockDataFrame = MultipleStockData.validate(data)
 
     return data
-
-
-# @timer
-# def get_ticker_data(ticker_symbols: str | list[str], **kwargs: Any) -> pd.DataFrame:
-#     """
-#     Retrieve historical market data for one or multiple ticker symbols using
-#     Yahoo Finance.
-#
-#     Args:
-#         ticker_symbols (list[str]):
-#             A list of ticker symbols (e.g., ["AAPL", "MSFT", "GOOG"]).
-#         **kwargs (Any):
-#             Additional keyword arguments passed to `yfinance.download`,
-#             such as `start`, `end`, `interval`, etc.
-#
-#     Returns:
-#         A validated dataframe of OHLCV (open, high, low, close, volume) data
-#         from yfinance.
-#     """
-#     kwargs.pop("tickers", None)  # remove if exists
-#     data: pd.DataFrame = yf.download(tickers=ticker_symbols, **kwargs)
-#
-#     # Handle single vs multi-ticker cases:
-#     if isinstance(ticker_symbols, str):
-#         data.columns = data.columns.droplevel(1)
-#         data = MarketData.validate(data)
-#
-#     # not sure how i want to handle multi-indexed dataframes yet
-#     # else:
-#     #     # Collapse it into flat columns for validation
-#     #     data = data.stack(level=0).rename_axis(["Date", "Ticker"]).reset_index()
-#
-#     return data
