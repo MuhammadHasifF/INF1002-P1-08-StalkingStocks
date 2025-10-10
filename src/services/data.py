@@ -9,25 +9,50 @@ Notes:
 """
 
 import pandas as pd
+import warnings
 
 from src.utils.helpers import timer
 
+@timer
+def has_missing(series: pd.Series) -> bool:
+    """
+    Check if a time series contains any missing values (NaNs).
+
+    RATIONALE:
+    - Some UI/analysis paths only need to *know* whether gaps exist to decide
+      if messaging/tooltips should appear (transparency) or if filling is required.
+    - Separating detection from action matches SRP and keeps pipelines explicit.
+
+    EFFICIENCY ANALYSIS:
+    - Time Complexity: O(n) — vectorized null check.
+    - Space Complexity: O(1) — returns a scalar boolean.
+
+    Args:
+        series (pd.Series): Numeric Series indexed by dates (DatetimeIndex or coercible).
+
+    Returns:
+        bool: True if at least one element is NaN; False otherwise.
+
+    Edge Cases:
+        - All-NaN series → returns True.
+        - Non-datetime index is fine; only values are inspected.
+    """
+    return pd.isna(series).any()
 
 @timer
-def check_missing_values(series: pd.Series) -> pd.Series:
+def fill_gaps(series: pd.Series) -> pd.Series:
     """
     Fill missing values in a time series using forward/back-fill.
 
     RATIONALE:
-    - Financial time series may contain small gaps (API hiccups, partial days).
+    - Financial series may contain small gaps (API hiccups, partial days).
     - Forward-fill (ffill) carries the last known value forward; back-fill (bfill)
-      covers leading gaps at the start. Together they remove NaNs without
-      inventing new trends.
+      covers leading gaps. Together they remove NaNs without inventing new trends.
 
     EFFICIENCY ANALYSIS:
-    - Time Complexity: O(n) — a couple of vectorized passes on the Series.
-    - Space Complexity: O(n) — returns a new Series (input is not mutated).
-    - Algorithmic Efficiency: Optimal for simple imputation; pure pandas ops.
+    - Time Complexity: O(n) — two vectorized passes.
+    - Space Complexity: O(n) — returns a new Series (input not mutated).
+    - Algorithmic Efficiency: Pure pandas ops; optimal for simple imputation.
 
     Args:
         series (pd.Series): Numeric Series indexed by dates (DatetimeIndex or coercible).
@@ -36,10 +61,41 @@ def check_missing_values(series: pd.Series) -> pd.Series:
         pd.Series: Same index/shape as input with NaNs filled (ffill then bfill).
 
     Edge Cases:
-        - All-NaN series returns all-NaN (no value to propagate).
+        - All-NaN series → still all-NaN (no value to propagate).
         - Non-datetime index is accepted; only values are imputed here.
     """
     return series.ffill().bfill()
+
+@timer
+def check_missing_values(series: pd.Series) -> pd.Series:
+    """
+    [DEPRECATED NAME] Fill missing values in a time series using forward/back-fill.
+
+    NOTE:
+    - This function *fills* values. For detection-only, use `has_missing()`.
+    - Preferred filler name is `fill_gaps()`; this alias is kept for compatibility.
+
+    RATIONALE:
+    - Matches previous project API while we migrate call sites to clearer names.
+
+    EFFICIENCY ANALYSIS:
+    - Time Complexity: O(n) — two vectorized passes via `fill_gaps()`.
+    - Space Complexity: O(n) — returns a new Series.
+
+    Args:
+        series (pd.Series): Numeric Series indexed by dates.
+
+    Returns:
+        pd.Series: Series with NaNs filled (ffill then bfill).
+    """
+    warnings.warn(
+        "check_missing_values() fills values. "
+        "Use has_missing() to detect or fill_gaps() to fill. "
+        "This alias will remain for compatibility.",
+        DeprecationWarning,
+        stacklevel=2,
+    )
+    return fill_gaps(series)
 
 
 @timer
@@ -75,7 +131,7 @@ def remove_non_trading_days(series: pd.Series) -> pd.Series:
 
 
 def clean_data(series: pd.Series) -> pd.Series:
-    series = check_missing_values(series)
+    series = fill_gaps(series)
     cleaned = remove_non_trading_days(series)
     return cleaned
 
@@ -129,7 +185,7 @@ def clean_data_with_mask(series: pd.Series, k: float = 3.0):
     Compose existing cleaning + outlier detection (no mutation of values).
 
     FLOW:
-      1) check_missing_values(series)
+      1) fill_gaps(series)
       2) remove_non_trading_days(...)
       3) outlier_mask_iqr(...)
 
@@ -137,7 +193,7 @@ def clean_data_with_mask(series: pd.Series, k: float = 3.0):
       cleaned: pd.Series        # after gaps filled + weekdays filter
       mask:    pd.Series[bool]  # True where cleaned is flagged by IQR
     """
-    cleaned = remove_non_trading_days(check_missing_values(series))
+    cleaned = remove_non_trading_days(fill_gaps(series))
     mask = outlier_mask_iqr(cleaned, k=k)
     return cleaned, mask
 
