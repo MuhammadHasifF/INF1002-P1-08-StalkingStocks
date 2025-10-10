@@ -1,73 +1,68 @@
-from typing import Any, Sequence
+from typing import Sequence
 
-import pandas as pd
 import streamlit as st
 
 from src.services.core import (compute_max_profit, compute_sdr, compute_sma,
                                compute_streak)
-from src.services.finance import (get_industry_info, get_ticker_data,
-                                  get_ticker_info)
+from src.services.finance import (get_industry_overview, get_sector_data,
+                                  get_sectors)
+from src.ui.adapters import (make_chart_inputs,
+                             make_industry_summary_df)
 from src.ui.charts import (add_indicators, create_figure, set_candlechart,
                            set_line_trend_chart, set_linechart, set_treemap)
 from src.utils.helpers import (format_date, format_large_number, format_name,
                                timer)
 
+@timer
+def display_sector_overview(column) -> list[str]:
+    sectors: Sequence[str] = get_sectors()
 
-def display_sector_overview(column, sector_data) -> None:
+    selected_sector = column.selectbox(
+        "Choose a sector", options=sectors, index=9, format_func=format_name
+    )
+    sector_data = get_sector_data(selected_sector)
+
     overview = sector_data.overview
 
     column.subheader(sector_data.name)
     column.text(overview["description"])
 
     left, middle, right = column.columns(3, border=True)
+
     left.metric("Companies", overview["companies_count"])
     middle.metric("Industries", overview["industries_count"])
     right.metric("Employees", format_large_number(overview["employee_count"]))
 
     left, right = column.columns(2, border=True)
+
     left.metric("Market Cap", f"{format_large_number(overview["market_cap"])} USD")
     right.metric("Market Weight", f"{overview['market_weight']*100:.2f}%")
 
-
-@st.cache_data
-def create_industry_overview(industries):
-    industry_info = {}
-
-    for ind in industries:
-        info = get_industry_info(ind)
-        market_weight = info.market_weight
-        pct_change = info.pct_change  # percentage change from previous close
-        formatted_ind = format_name(ind)
-        industry_info[formatted_ind] = {
-            "weight": market_weight,
-            "pct_change": pct_change,
-        }
-
-    return industry_info
+    return sector_data
 
 
+@timer
 def display_industry_overview(column, industries) -> None:
     column.subheader("Sector Breakdown")
-    column.info("This shows a sector's industry weights and how they performed today.", icon=":material/info:")
-    industry_info = create_industry_overview(industries)
-    summary_df = pd.DataFrame.from_dict(industry_info, orient="index").reset_index()
-    summary_df.rename(columns={"index": "industry"}, inplace=True)
-
-    summary_df["color"] = summary_df["pct_change"].apply(
-        lambda x: "green" if x >= 0 else "red"
+    column.info(
+        "This shows a sector's industry weights and how they performed today.",
+        icon=":material/info:",
     )
-
+    overview = get_industry_overview(industries)
+    summary_df = make_industry_summary_df(overview)
     fig = set_treemap(summary_df)
 
     column.plotly_chart(fig, use_container_width=True)
 
 
+@timer
 @st.cache_data
 def display_basic_price_info(ticker_info, ticker_data):
+    # keep in mind, ticker_data is already cleaned
     close = ticker_data["Close"]
-    open = ticker_data["Open"]
-    high = ticker_data["High"]
-    low = ticker_data["Low"]
+    open = ticker_data["Close"]
+    high = ticker_data["Close"]
+    low = ticker_data["Open"]
     sdr = compute_sdr(close)
 
     # handles NoneType error when interval and horizon match
@@ -78,8 +73,8 @@ def display_basic_price_info(ticker_info, ticker_data):
         latest_return = sdr.iloc[-1]
         previous_close = close.iloc[-2]
         absolute_change = latest_price - previous_close
-        latest_open = open[-1]
-        days_range = f"{low[-1]:.2f} - {high[-1]:.2f}"
+        latest_open = open.iloc[-1]
+        days_range = f"{low.iloc[-1]:.2f} - {high.iloc[-1]:.2f}"
 
         st.metric(
             "Price", f"{latest_price:.2f} USD", f"{latest_return:.2%}", border=False
@@ -89,24 +84,12 @@ def display_basic_price_info(ticker_info, ticker_data):
         st.metric("Day's Range", days_range, border=False)
 
 
+@timer
 def display_charts(column, filters) -> None:
-    ticker_data = get_ticker_data(
-        filters["selected_ticker"],
-        interval=filters["selected_interval"],
-        **filters["selected_horizon"],
-        progress=False,
-        auto_adjust=True,
-    )
-
-    if ticker_data is None:
-        st.error("Whoops, could not fetch data!")
-
-    ticker_info = get_ticker_info(filters["selected_ticker"])
+    ticker_info, ticker_data, up, down, mask = make_chart_inputs(filters)
     close = ticker_data["Close"]
-    up, down, mask = compute_streak(close)
 
     display_name = f"{ticker_info.long_name} ({ticker_info.symbol})"
-
     column.subheader(display_name)
 
     row = column.container(horizontal=True)
@@ -126,6 +109,7 @@ def display_charts(column, filters) -> None:
         else:
             fig = set_candlechart(fig, ticker_data)
 
+        # this adds technical indicator overlaid onto existing charts
         for n in filters["selected_indicators"]:
             computed_close = compute_sma(close, n)
             fig = add_indicators(fig, computed_close, n)
