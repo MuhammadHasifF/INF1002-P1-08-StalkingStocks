@@ -6,12 +6,12 @@ from src.services.core import (compute_max_profit, compute_sdr, compute_sma,
                                compute_streak)
 from src.services.finance import (get_industry_overview, get_sector_data,
                                   get_sectors)
-from src.ui.adapters import (make_chart_inputs,
-                             make_industry_summary_df)
+from src.ui.adapters import make_chart_inputs, make_industry_summary_df
 from src.ui.charts import (add_indicators, create_figure, set_candlechart,
                            set_line_trend_chart, set_linechart, set_treemap)
 from src.utils.helpers import (format_date, format_large_number, format_name,
                                timer)
+
 
 @timer
 def display_sector_overview(column) -> list[str]:
