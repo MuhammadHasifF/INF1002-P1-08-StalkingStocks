@@ -12,17 +12,18 @@ The module is intended for data ingestion, preprocessing, and real-time querying
 of financial data to support dashboards, analytics, and reporting features.
 """
 
-from typing import Any, Sequence
+from typing import Any, Iterable, Sequence, TypeAlias
 
 import pandas as pd
 import yfinance as yf
 
 from src.constants.sectors import SECTORS
 from src.models.base import Industry, Sector, Ticker
-from src.schemas.dataframe import (MultipleStockData,
-                                 SingleStockData, StockDataFrame)
-from src.utils.helpers import (timer, yf_industry_to_model, yf_sector_to_model,
-                             yf_ticker_to_model)
+from src.models.dataframe import (MultipleStockData, SingleStockData,
+                                  StockDataFrame)
+from src.utils.helpers import timer
+from src.utils.parsers import (yf_industry_to_model, yf_sector_to_model,
+                               yf_ticker_to_model)
 
 
 def get_sectors() -> Sequence[str]:
@@ -71,8 +72,26 @@ def get_industry_info(industry_key: str) -> Industry:
 
     data: Industry = yf_industry_to_model(yf_industry)
 
-    # data.top_performing = TopPerforming.validate(data.top_performing)
-    # data.top_growing = TopGrowing.validate(data.top_growing)
+    return data
+
+
+IndustryOverview: TypeAlias = Iterable[dict[str, str | float]]
+
+
+def get_industry_overview(
+    industries: Iterable[str],
+) -> IndustryOverview:
+    data: IndustryOverview = []
+
+    for ind in industries:
+        info: Industry = get_industry_info(ind)
+        data.append(
+            {
+                "industry": ind,
+                "weight": info.market_weight,
+                "pct_change": info.pct_change,
+            }
+        )
 
     return data
 

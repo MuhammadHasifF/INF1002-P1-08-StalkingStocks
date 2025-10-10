@@ -3,10 +3,10 @@ from typing import Any
 from src.utils.helpers import rolling_window
 
 
-def display_filters(column, top_companies) -> dict[str, Any]:
+def display_filters(column, sector_data) -> dict[str, Any]:
     selected_ticker = column.selectbox(
         "Select a ticker",
-        top_companies,
+        sector_data['top_companies'],
         help="Choose the stock or asset you want to view.",
     )
 

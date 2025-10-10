@@ -23,14 +23,13 @@ def display_sector_industry_overview():
     sector_col, industry_col = st.columns(2, border=True)
     sector_data = display_sector_overview(sector_col)
     display_industry_overview(industry_col, sector_data.industries)
-    return sector_data  # this will be passed to filters
+    return sector_data.model_dump()  # this will be passed to filters
 
 
 def display_filter_and_charts(sector_data):
     """contains filter and chart sections"""
     filter_col, chart_col = st.columns([1, 3], border=True)
-    sector_dict = sector_data.model_dump()
-    filters = display_filters(filter_col, sector_dict["top_companies"])
+    filters = display_filters(filter_col, sector_data)
     display_charts(chart_col, filters)
 
 
