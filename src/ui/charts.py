@@ -4,13 +4,14 @@ charts.py
 this module handles chart generation
 """
 
+import pandas as pd
 import plotly.express as px
 import plotly.graph_objs as go
 from plotly.subplots import make_subplots
 
 
-def create_figure():
-    fig = make_subplots(
+def create_figure() -> go.Figure:
+    fig: go.Figure = make_subplots(
         rows=2,
         cols=1,
         shared_xaxes=True,
@@ -21,8 +22,8 @@ def create_figure():
     return fig
 
 
-def set_treemap(summary_df):
-    fig = px.treemap(
+def set_treemap(summary_df: pd.DataFrame) -> go.Figure:
+    fig: go.Figure = px.treemap(
         summary_df,
         path=["industry"],  # unique leaves
         values="weight",
@@ -42,7 +43,7 @@ def set_treemap(summary_df):
     return fig
 
 
-def set_linechart(fig, close):
+def set_linechart(fig: go.Figure, close: pd.Series) -> go.Figure:
     """Simple line chart of closing prices."""
     fig.add_trace(
         go.Scatter(
@@ -56,7 +57,9 @@ def set_linechart(fig, close):
     return fig
 
 
-def set_line_trend_chart(fig, close, up, down, mask):
+def set_line_trend_chart(
+    fig: go.Figure, close: pd.Series, up: pd.Series, down: pd.Series, mask: pd.Series
+) -> go.Figure:
     marker_colors = ["green" if m == 1 or m == 0 else "red" for m in mask]
     mode = "lines+markers"
     line_color = "gray"
@@ -92,7 +95,7 @@ def set_line_trend_chart(fig, close, up, down, mask):
     return fig
 
 
-def set_candlechart(fig, ticker_data):
+def set_candlechart(fig: go.Figure, ticker_data: pd.DataFrame) -> go.Figure:
     fig.add_trace(
         go.Candlestick(
             x=ticker_data.index,
@@ -108,7 +111,7 @@ def set_candlechart(fig, ticker_data):
     return fig
 
 
-def add_indicators(fig, close, n):
+def add_indicators(fig: go.Figure, close: pd.Series, n: int) -> go.Figure:
     """Add SMA or other indicators to existing figure."""
     fig.add_trace(
         go.Scatter(

@@ -70,8 +70,7 @@ def display_filters(column, sector_data) -> dict[str, Any]:
 
     start, end = rolling_window(**selected_horizon)
 
-    # can change to dataclass/basemodel
-    filters = {
+    filters: dict[str, Any] = {
         "selected_ticker": selected_ticker,
         "selected_horizon": {"start": start, "end": end},
         "selected_interval": selected_interval,
