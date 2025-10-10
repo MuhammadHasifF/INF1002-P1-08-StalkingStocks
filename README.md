@@ -66,11 +66,9 @@ python -m pytest -v
 │   ├── constants/              # Static values and domain-specific mappings
 │   │   ├── __init__.py
 │   │   └── sectors.py
-│   ├── models/                 # Core data models and base classes
+│   ├── models/                 # Data models and dataframe schemas
 │   │   ├── __init__.py
-│   │   └── base.py
-│   ├── schemas/                # Data validation and dataframe schema definitions
-│   │   ├── __init__.py
+│   │   ├── base.py
 │   │   └── dataframe.py
 │   ├── services/               # Business logic and data processing modules
 │   │   ├── __init__.py
@@ -79,17 +77,19 @@ python -m pytest -v
 │   │   └── finance.py
 │   ├── ui/                     # Visualization and user interface components
 │   │   ├── __init__.py
+│   │   ├── adapters.py
 │   │   ├── charts.py
 │   │   ├── filters.py
 │   │   └── overview.py
 │   └── utils/                  # General-purpose helper functions
 │       ├── __init__.py
-│       └── helpers.py
+│       ├── helpers.py
+│       └── parsers.py
 ├── tests/                      # Unit tests
-│   ├── conftest.py
-│   ├── test_core.py
-│   ├── test_finance.py
-│   └── test_models.py
+│    ├── conftest.py
+│    ├── test_core.py
+│    ├── test_finance.py
+│    └── test_models.py
 ├── docs/
 ├── notebook/
 ├── README.md
