@@ -29,7 +29,7 @@ def display_filters(column, top_companies) -> dict[str, Any]:
     # Ticker selector
     selected_ticker = column.selectbox(
         "Select a ticker",
-        top_companies,
+        sector_data['top_companies'],
         help="Choose the stock or asset you want to view.",
     )
     # Time horizon presets → arguments for rolling_window()
