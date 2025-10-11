@@ -19,9 +19,7 @@ import plotly.graph_objs as go
 from plotly.subplots import make_subplots
 
 
-def create_figure() -> go.Figure:
-    fig: go.Figure = make_subplots(
-def create_figure():
+def create_figure() -> go.Figure: 
     """
         Create a base figure with 2 stacked rows sharing the X-axis.
 
@@ -30,7 +28,7 @@ def create_figure():
         plotly.graph_objs._figure.Figure
             Subplots: row1 (70%), row2 (30%), shared X.
     """
-    fig = make_subplots(
+    fig: go.Figure = make_subplots(
         rows=2,
         cols=1,
         shared_xaxes=True,
