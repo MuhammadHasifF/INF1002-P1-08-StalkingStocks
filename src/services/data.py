@@ -1,12 +1,16 @@
 """
 data.py
+========
+Data preprocessing utilities for time-series ingestion and cleanup.
 
-This module contains functionalities related to data pre/post processing and
-ingestion for each feature within the application.
-
-Notes:
-    -
+Functions
+---------
+- check_missing_values: forward/back-fill gaps.
+- remove_non_trading_days: keep weekdays (Mon–Fri) only.
+- clean_data: convenience pipeline (fill → weekdays).
+- clean_outliers_iqr: IQR-based outlier handling.
 """
+
 
 import pandas as pd
 
@@ -16,58 +20,56 @@ from src.utils.helpers import timer
 @timer
 def check_missing_values(series: pd.Series) -> pd.Series:
     """
-    Fill missing values in a time series using forward/back-fill.
+       Fill gaps in a time series using forward-fill then back-fill.
 
-    RATIONALE:
-    - Financial time series may contain small gaps (API hiccups, partial days).
-    - Forward-fill (ffill) carries the last known value forward; back-fill (bfill)
-      covers leading gaps at the start. Together they remove NaNs without
-      inventing new trends.
+       Parameters
+       ----------
+       series : pd.Series
+           Numeric Series (any index).
 
-    EFFICIENCY ANALYSIS:
-    - Time Complexity: O(n) — a couple of vectorized passes on the Series.
-    - Space Complexity: O(n) — returns a new Series (input is not mutated).
-    - Algorithmic Efficiency: Optimal for simple imputation; pure pandas ops.
-
-    Args:
-        series (pd.Series): Numeric Series indexed by dates (DatetimeIndex or coercible).
-
-    Returns:
-        pd.Series: Same index/shape as input with NaNs filled (ffill then bfill).
-
-    Edge Cases:
-        - All-NaN series returns all-NaN (no value to propagate).
-        - Non-datetime index is accepted; only values are imputed here.
-    """
+       Returns
+       -------
+       pd.Series
+           Same shape/index with NaNs imputed via ffill → bfill.
+       """
+    # RATIONALE (dev note):
+    # - Small gaps can arise from API hiccups/partial days.
+    # - ffill propagates last known value; bfill covers leading NaNs.
+    #
+    # EFFICIENCY (dev note):
+    # - O(n) over the Series; vectorized in pandas.
+    # - Returns a new Series; original is not mutated.
+    #
+    # EDGE CASES (dev note):
+    # - All-NaN input remains all-NaN (nothing to propagate).
     return series.ffill().bfill()
 
 
 @timer
 def remove_non_trading_days(series: pd.Series) -> pd.Series:
     """
-    Remove weekend rows from a daily time series (Mon–Fri kept).
+      Remove weekend rows (keep Monday–Friday) from a daily series.
 
-    RATIONALE:
-    - Yahoo Finance typically returns trading days only, but upstream joins or
-      exports may introduce weekends. Indicators and charts should operate on
-      trading days for consistency.
+      Parameters
+      ----------
+      series : pd.Series
+          Series with a DatetimeIndex or an index coercible to datetime.
 
-    EFFICIENCY ANALYSIS:
-    - Time Complexity: O(n) — boolean mask on the index.
-    - Space Complexity: O(n) — returns a filtered view/copy of the Series.
-    - Algorithmic Efficiency: Vectorized filter; minimal overhead.
-
-    Args:
-        series (pd.Series): Series with a DatetimeIndex (or coercible via to_datetime).
-
-    Returns:
-        pd.Series: Series filtered to weekdays only (dayofweek 0..4).
-
-    Notes:
-        - If the index is not datetime-like, it is converted via `pd.to_datetime`.
-        - This function does not remove exchange holidays (weekdays with no trading);
-          those generally do not appear in Yahoo data.
-    """
+      Returns
+      -------
+      pd.Series
+          Series filtered to weekdays only (dayofweek in 0..4).
+      """
+    # RATIONALE (dev note):
+    # - Upstream joins/exports may introduce weekends; indicators should operate
+    #   on trading days for consistency.
+    #
+    # EFFICIENCY (dev note):
+    # - O(n) boolean mask; vectorized.
+    #
+    # NOTES (dev note):
+    # - Converts index to DatetimeIndex if needed.
+    # - Does not handle exchange holidays explicitly (usually absent in Yahoo data).
     s = series.copy()
     if not isinstance(s.index, pd.DatetimeIndex):
         s.index = pd.to_datetime(s.index)
@@ -75,6 +77,21 @@ def remove_non_trading_days(series: pd.Series) -> pd.Series:
 
 
 def clean_data(series: pd.Series) -> pd.Series:
+    """
+      Convenience pipeline: fill gaps, then drop weekends.
+
+      Parameters
+      ----------
+      series : pd.Series
+          Input numeric series.
+
+      Returns
+      -------
+      pd.Series
+          Cleaned series.
+      """
+    # PIPELINE (dev note):
+    # - Order matters: impute first, then filter by weekdays.
     series = check_missing_values(series)
     cleaned = remove_non_trading_days(series)
     return cleaned
@@ -84,36 +101,38 @@ def clean_outliers_iqr(
     series: pd.Series, replace_with_nan: bool = True, k: float = 3.0
 ) -> pd.Series:
     """
-    Handle outliers in a numeric Series using Tukey IQR fences.
+       Handle outliers using Tukey IQR fences.
 
-    RATIONALE:
-    - Extreme values (bad ticks, split artifacts, data glitches) can distort
-      indicators and dashboards. IQR is robust to spikes and does not assume
-      normality (unlike z-score).
+       Parameters
+       ----------
+       series : pd.Series
+           Numeric Series (any index).
+       replace_with_nan : bool, default True
+           If True, mask outliers to NaN; else clip to [Lower, Upper].
+       k : float, default 3.0
+           IQR multiplier (1.5 = classic Tukey; larger is stricter).
 
-    METHOD:
-        Q1 = 25th percentile, Q3 = 75th percentile, IQR = Q3 - Q1
-        Lower = Q1 - k * IQR
-        Upper = Q3 + k * IQR
-        Outlier if value < Lower or value > Upper
-
-    EFFICIENCY ANALYSIS:
-    - Time Complexity: O(n) — percentile estimates + a vectorized mask.
-    - Space Complexity: O(n) — returns a new Series (masked or clipped).
-    - Algorithmic Efficiency: Vectorized; no Python loops.
-
-    Args:
-        series (pd.Series): Numeric Series (e.g., Close or Volume) with any index.
-        replace_with_nan (bool): If True, mask outliers to NaN; if False, clip to [Lower, Upper].
-        k (float): IQR multiplier. Use 1.5 for classic Tukey; 3.0 stricter for blue-chip stability.
-
-    Returns:
-        pd.Series: Cleaned Series (same index), with outliers masked or clipped.
-
-    Edge Cases:
-        - All-constant series → IQR=0 → Lower=Upper; no values flagged.
-        - Heavy-tailed distributions may flag more points; tune `k` as needed.
-    """
+       Returns
+       -------
+       pd.Series
+           Cleaned series with outliers masked or clipped.
+       """
+    # RATIONALE (dev note):
+    # - Robust to spikes and non-normal data (bad ticks, splits, glitches).
+    #
+    # METHOD (dev note):
+    #   Q1 = 25th pct, Q3 = 75th pct, IQR = Q3 - Q1
+    #   Lower = Q1 - k * IQR
+    #   Upper = Q3 + k * IQR
+    #   Outlier if value < Lower or > Upper
+    #
+    # EFFICIENCY (dev note):
+    # - O(n): percentile estimation + vectorized mask.
+    # - Returns new Series; no Python loops.
+    #
+    # EDGE CASES (dev note):
+    # - Constant series → IQR=0 → Lower==Upper → no flags.
+    # - Heavy-tailed distributions may flag more points; tune `k`.
     q1 = series.quantile(0.25)
     q3 = series.quantile(0.75)
     iqr = q3 - q1

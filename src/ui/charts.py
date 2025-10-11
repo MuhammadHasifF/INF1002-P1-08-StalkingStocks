@@ -1,7 +1,16 @@
 """
 charts.py
+=========
+Plotly chart builders used by the UI layer.
 
-this module handles chart generation
+Functions
+---------
+- create_figure: two-row layout with shared X axis.
+- set_treemap: industry treemap with weight and % change.
+- set_linechart: line chart of closing prices.
+- set_line_trend_chart: line+markers with up/down run annotation.
+- set_candlechart: OHLC candlestick.
+- add_indicators: overlay (e.g., SMA) on an existing figure.
 """
 
 import pandas as pd
@@ -12,6 +21,16 @@ from plotly.subplots import make_subplots
 
 def create_figure() -> go.Figure:
     fig: go.Figure = make_subplots(
+def create_figure():
+    """
+        Create a base figure with 2 stacked rows sharing the X-axis.
+
+        Returns
+        -------
+        plotly.graph_objs._figure.Figure
+            Subplots: row1 (70%), row2 (30%), shared X.
+    """
+    fig = make_subplots(
         rows=2,
         cols=1,
         shared_xaxes=True,
@@ -24,6 +43,22 @@ def create_figure() -> go.Figure:
 
 def set_treemap(summary_df: pd.DataFrame) -> go.Figure:
     fig: go.Figure = px.treemap(
+def set_treemap(summary_df):
+    """
+       Build an industry treemap colored by sign of percent change.
+
+       Parameters
+       ----------
+       summary_df : pd.DataFrame
+           Must contain: 'industry' (leaf labels), 'weight' (sizes),
+           'pct_change' (numeric).
+
+       Returns
+       -------
+       plotly.graph_objs._figure.Figure
+           Treemap figure.
+    """
+    fig = px.treemap(
         summary_df,
         path=["industry"],  # unique leaves
         values="weight",
@@ -44,7 +79,21 @@ def set_treemap(summary_df: pd.DataFrame) -> go.Figure:
 
 
 def set_linechart(fig: go.Figure, close: pd.Series) -> go.Figure:
-    """Simple line chart of closing prices."""
+    """
+    Add a simple line trace of closing prices.
+
+    Parameters
+    ----------
+    fig : plotly Figure
+        Target figure to receive the trace.
+    close : pd.Series
+        Close prices; index used for X, values for Y.
+
+    Returns
+    -------
+    plotly Figure
+        The same figure with an added trace.
+    """
     fig.add_trace(
         go.Scatter(
             x=close.index,
@@ -60,6 +109,31 @@ def set_linechart(fig: go.Figure, close: pd.Series) -> go.Figure:
 def set_line_trend_chart(
     fig: go.Figure, close: pd.Series, up: pd.Series, down: pd.Series, mask: pd.Series
 ) -> go.Figure:
+    """
+       Add line+marker trace and annotate longest up/down runs.
+
+       Parameters
+       ----------
+       fig : plotly Figure
+           Target figure (assumes subplot at row=1, col=1 exists).
+       close : pd.Series
+           Close prices.
+       up : int
+           Longest upward run length.
+       down : int
+           Longest downward run length.
+       mask : Iterable[int]
+           Direction per day: 1 (up), 0 (flat), -1 (down).
+
+       Returns
+       -------
+       plotly Figure
+           The same figure with trace and annotation added.
+    """
+    # DEV NOTES:
+    # - Marker color encodes direction (green for up/flat, red for down).
+    # - Annotation uses paper coordinates (xref/yref="paper") so it stays
+    #   pinned relative to the figure area regardless of data zoom/pan.
     marker_colors = ["green" if m == 1 or m == 0 else "red" for m in mask]
     mode = "lines+markers"
     line_color = "gray"
@@ -96,6 +170,24 @@ def set_line_trend_chart(
 
 
 def set_candlechart(fig: go.Figure, ticker_data: pd.DataFrame) -> go.Figure:
+    """
+       Add a candlestick trace (OHLC) to the top subplot.
+
+       Parameters
+       ----------
+       fig : plotly Figure
+           Target figure.
+       ticker_data : pd.DataFrame
+           Must contain columns: 'Open', 'High', 'Low', 'Close';
+           index used for X.
+
+       Returns
+       -------
+       plotly Figure
+           The same figure with a candlestick trace added.
+    """
+    # DEV NOTES:
+    # - Adds to row=1, col=1 to align with other price overlays/indicators.
     fig.add_trace(
         go.Candlestick(
             x=ticker_data.index,
@@ -112,7 +204,26 @@ def set_candlechart(fig: go.Figure, ticker_data: pd.DataFrame) -> go.Figure:
 
 
 def add_indicators(fig: go.Figure, close: pd.Series, n: int) -> go.Figure:
-    """Add SMA or other indicators to existing figure."""
+    """
+        Overlay an indicator line (e.g., SMA) on the figure.
+
+        Parameters
+        ----------
+        fig : plotly Figure
+            Target figure.
+        close : pd.Series or array-like
+            Indicator series aligned to the chart’s X.
+        n : int
+            Window/period label for the legend.
+
+        Returns
+        -------
+        plotly Figure
+            The same figure with the indicator trace added.
+    """
+    # DEV NOTES:
+    # - Keep line thin so it layers well over candles.
+    # - Name uses f"SMA {n}" for concise legends.
     fig.add_trace(
         go.Scatter(
             x=close.index, y=close, mode="lines", line=dict(width=1.5), name=f"SMA {n}"
