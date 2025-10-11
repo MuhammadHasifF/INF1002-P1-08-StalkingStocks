@@ -61,6 +61,8 @@ def display_sector_overview(column) -> list[str]:
     left.metric("Market Cap", f"{format_large_number(overview["market_cap"])} USD")
     right.metric("Market Weight", f"{overview['market_weight']*100:.2f}%")
 
+    return sector_data
+
 
 @st.cache_data
 def create_industry_overview(industries):
