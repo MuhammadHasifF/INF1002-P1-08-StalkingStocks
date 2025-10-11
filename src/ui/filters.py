@@ -3,7 +3,7 @@ from typing import Any
 from src.utils.helpers import rolling_window
 
 
-def display_filters(column, top_companies) -> dict[str, Any]:
+def display_filters(column, sector_data) -> dict[str, Any]:
     """
        Build and return UI filter selections.
 
@@ -32,6 +32,7 @@ def display_filters(column, top_companies) -> dict[str, Any]:
         sector_data['top_companies'],
         help="Choose the stock or asset you want to view.",
     )
+    
     # Time horizon presets → arguments for rolling_window()
     horizon_mapping = {
         "1 Day": {"n": 1, "unit": "days"},  # interval = 1m
