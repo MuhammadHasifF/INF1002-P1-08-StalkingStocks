@@ -18,7 +18,7 @@ def display_header() -> None:
     )
 
 
-def display_sector_industry_overview():
+def display_sector_industry_overview() -> dict[str, str | float]:
     """contains sector and industry overview sections"""
     sector_col, industry_col = st.columns(2, border=True)
     sector_data = display_sector_overview(sector_col)
@@ -26,21 +26,21 @@ def display_sector_industry_overview():
     return sector_data.model_dump()  # this will be passed to filters
 
 
-def display_filter_and_charts(sector_data):
+def display_filter_and_charts(sector_data: dict[str, str | float]) -> None:
     """contains filter and chart sections"""
     filter_col, chart_col = st.columns([1, 3], border=True)
     filters = display_filters(filter_col, sector_data)
     display_charts(chart_col, filters)
 
 
-def display_body():
+def display_body() -> None:
     # sector data will be passed to filters for chart generation
     sector_data = display_sector_industry_overview()
     display_filter_and_charts(sector_data)
 
 
 @timer
-def run_dashboard():
+def run_dashboard() -> None:
     configure_page()
     display_header()
     display_body()

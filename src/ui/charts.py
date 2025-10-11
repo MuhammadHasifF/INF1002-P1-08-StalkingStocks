@@ -12,11 +12,15 @@ Functions
 - set_candlechart: OHLC candlestick.
 - add_indicators: overlay (e.g., SMA) on an existing figure.
 """
+
+import pandas as pd
 import plotly.express as px
 import plotly.graph_objs as go
 from plotly.subplots import make_subplots
 
 
+def create_figure() -> go.Figure:
+    fig: go.Figure = make_subplots(
 def create_figure():
     """
         Create a base figure with 2 stacked rows sharing the X-axis.
@@ -37,6 +41,8 @@ def create_figure():
     return fig
 
 
+def set_treemap(summary_df: pd.DataFrame) -> go.Figure:
+    fig: go.Figure = px.treemap(
 def set_treemap(summary_df):
     """
        Build an industry treemap colored by sign of percent change.
@@ -72,7 +78,7 @@ def set_treemap(summary_df):
     return fig
 
 
-def set_linechart(fig, close):
+def set_linechart(fig: go.Figure, close: pd.Series) -> go.Figure:
     """
     Add a simple line trace of closing prices.
 
@@ -100,7 +106,9 @@ def set_linechart(fig, close):
     return fig
 
 
-def set_line_trend_chart(fig, close, up, down, mask):
+def set_line_trend_chart(
+    fig: go.Figure, close: pd.Series, up: pd.Series, down: pd.Series, mask: pd.Series
+) -> go.Figure:
     """
        Add line+marker trace and annotate longest up/down runs.
 
@@ -161,7 +169,7 @@ def set_line_trend_chart(fig, close, up, down, mask):
     return fig
 
 
-def set_candlechart(fig, ticker_data):
+def set_candlechart(fig: go.Figure, ticker_data: pd.DataFrame) -> go.Figure:
     """
        Add a candlestick trace (OHLC) to the top subplot.
 
@@ -195,7 +203,7 @@ def set_candlechart(fig, ticker_data):
     return fig
 
 
-def add_indicators(fig, close, n):
+def add_indicators(fig: go.Figure, close: pd.Series, n: int) -> go.Figure:
     """
         Overlay an indicator line (e.g., SMA) on the figure.
 

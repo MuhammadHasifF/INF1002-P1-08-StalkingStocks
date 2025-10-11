@@ -96,8 +96,7 @@ def display_filters(column, top_companies) -> dict[str, Any]:
     # Convert horizon preset to concrete date range
     start, end = rolling_window(**selected_horizon)
 
-    # DEV NOTE: This could be a dataclass or Pydantic model later for validation.
-    filters = {
+    filters: dict[str, Any] = {
         "selected_ticker": selected_ticker,
         "selected_horizon": {"start": start, "end": end},
         "selected_interval": selected_interval,
