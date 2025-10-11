@@ -40,8 +40,6 @@ def create_figure() -> go.Figure:
 
 
 def set_treemap(summary_df: pd.DataFrame) -> go.Figure:
-    fig: go.Figure = px.treemap(
-def set_treemap(summary_df):
     """
        Build an industry treemap colored by sign of percent change.
 
@@ -56,7 +54,7 @@ def set_treemap(summary_df):
        plotly.graph_objs._figure.Figure
            Treemap figure.
     """
-    fig = px.treemap(
+    fig: go.Figure = px.treemap(
         summary_df,
         path=["industry"],  # unique leaves
         values="weight",
