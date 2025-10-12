@@ -1,90 +1,120 @@
-# Stalking Stocks
+# 📈 Stalking Stocks
 
-A financial analysis application for beginner investors.
+Beginner-friendly financial analysis—delivered via a clean, interactive Streamlit dashboard.
 
-## Setup Guide
+![Python](https://img.shields.io/badge/Python-3.13+-blue)
+![Streamlit](https://img.shields.io/badge/Streamlit-app-brightgreen)
+![Tests](https://img.shields.io/badge/tests-pytest-informational)
 
-### Prerequisites 
+---
 
-- Python 3.9+ installed  
-- `pip` or `conda` for package management  
+## Table of Contents
+- [Features](#features)
+- [Quick Start](#quick-start)
+- [Unit Tests](#unit-tests)
+- [Project Structure](#project-structure)
 
-### Create and Activate a Virtual Environment
+---
+
+## Features
+
+- 🧭 Interactive Streamlit dashboard with price/volume charts
+- 🔎 Ticker lookup with validated historical data fetching
+- 🗂️ Sector and symbol filtering for quick market slicing
+- 📊 Basics: returns, highs/lows, drawdowns, moving averages
+- 📈 Multi-ticker comparison and configurable chart options
+- 🧩 Modular codebase (`models`, `services`, `ui`, `utils`)
+- 🧪 Pytest-covered core for reliability
+
+> [!NOTE]
+> See `src/ui/` for chart components and `src/services/` for data/business logic.
+
+---
+
+## Quick Start
+
+### Prerequisites
+- Python **3.13+**
+- `pip` (or `conda`) for package management
+
+### Clone
 
 ```bash
-# Linux/macOS 
+git clone https://github.com/MuhammadHasifF/INF1002-P1-08-StalkingStocks.git
+cd INF1002-P1-08-StalkingStocks
+```
+
+### Create & Activate a Virtual Environment
+
+```bash
+# Linux/macOS
 python3 -m venv .venv
-source .venv/bin/activate 
+source .venv/bin/activate
 
-# Windows 
+# Windows (PowerShell)
 python -m venv .venv
-.venv/bin/Activate.ps1 
+. .\.venv\Scripts\Activate.ps1
 
-# To deactive environment
+# Deactivate when you're done
 deactivate
 ```
 
 ### Install Dependencies
 
 ```bash
-python install -r requirements.txt
+pip install -r requirements.txt
 ```
 
-### Starting the App
+### Run the App
 
 ```bash
 streamlit run app.py
 ```
+> The app will open in your browser. If not, visit the URL printed in your terminal.
 
-### Testing
+## Unit Tests
 
 ```bash
 # run all tests
-python -m pytest
+pytest
 
 # run tests in a specific file
-python -m pytest path/to/your_test_file.py
+pytest tests/test_core.py
 
 # run tests by keyword
-python -m pytest -k "keyword_to_match"
+pytest -k "ticker"
 
-# run test on specific function
-python -m pytest path/to/your_test_file.py::test_function_name
+# run a specific test function
+pytest tests/test_finance.py::test_get_ticker_data
 
-# to get verbose output during tests
-python -m pytest -v
+# verbose output
+pytest -v
 ```
 
 ## Project Structure
 
 ```bash
 .
-├── app.py                      # Main entry script for the project.
-├── src/                        # Main application source code
-│   ├── __init__.py
-│   ├── dashboard.py
-│   ├── constants/              # Static values and domain-specific mappings
-│   │   ├── __init__.py
-│   │   └── sectors.py
-│   ├── models/                 # Data models and dataframe schemas
-│   │   ├── __init__.py
-│   │   ├── base.py
-│   │   └── dataframe.py
-│   ├── services/               # Business logic and data processing modules
-│   │   ├── __init__.py
-│   │   ├── core.py
-│   │   ├── data.py
-│   │   └── finance.py
-│   ├── ui/                     # Visualization and user interface components
-│   │   ├── __init__.py
-│   │   ├── adapters.py
-│   │   ├── charts.py
-│   │   ├── filters.py
-│   │   └── overview.py
-│   └── utils/                  # General-purpose helper functions
-│       ├── __init__.py
-│       ├── helpers.py
-│       └── parsers.py
+├── app.py                      # Streamlit entry point
+├── src/                        # Application source
+│   ├── dashboard.py
+│   ├── constants/              # Static values and domain-specific mappings
+│   │   └── sectors.py
+│   ├── models/                 # Data models and dataframe schemas
+│   │   ├── base.py
+│   │   └── dataframe.py
+│   ├── services/               # Business logic and data processing
+│   │   ├── core.py
+│   │   ├── data.py
+│   │   └── finance.py
+│   ├── ui/                     # Visualization & UI components
+│   │   ├── adapters.py
+│   │   ├── charts.py
+│   │   ├── filters.py
+│   │   └── overview.py
+│   └── utils/                  # General-purpose helpers
+│       ├── helpers.py
+│       └── parsers.py
 ├── tests/                      # Unit tests
 │    ├── conftest.py
 │    ├── test_core.py
