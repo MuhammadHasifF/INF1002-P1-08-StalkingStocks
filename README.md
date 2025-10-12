@@ -22,7 +22,7 @@ Beginner-friendly financial analysis—delivered via a clean, interactive Stream
 - 🔎 Ticker lookup with validated historical data fetching
 - 🗂️ Sector and symbol filtering for quick market slicing
 - 📊 Basics: returns, highs/lows, drawdowns, moving averages
-- 📈 Multi-ticker comparison and configurable chart options
+- 📈 Configurable chart options
 - 🧩 Modular codebase (`models`, `services`, `ui`, `utils`)
 - 🧪 Pytest-covered core for reliability
 
