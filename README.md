@@ -59,7 +59,8 @@ python -m pytest -v
 
 ```bash
 .
-
+├── .github/workflows/
+│   └── tests.yml    
 ├── src/                        
 │   ├── constants/             
 │   ├── models/                
