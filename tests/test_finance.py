@@ -2,7 +2,7 @@ import pandas as pd
 import pytest
 
 from src.models.base import Industry, Sector, Ticker
-from src.services.finance import (get_industry_info, get_sector_data,
+from src.services.finance import (get_industry_info, get_sector_info,
                                   get_ticker_data, get_ticker_info)
 
 
@@ -26,8 +26,8 @@ def test_get_ticker_data(symbol):
     assert isinstance(data, pd.DataFrame)  # our custom aliases don't exist at runtime
 
 
-def test_get_sector_data(sectors):
-    data = get_sector_data(sector_key=sectors[0])
+def test_get_sector_info(sectors):
+    data = get_sector_info(sector_key=sectors[0])
     assert isinstance(data, Sector)
 
 

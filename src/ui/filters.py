@@ -1,38 +1,36 @@
+"""
+filters.py
+
+This module contains Streamlit filter controls for display at the frontend.
+"""
+
 from typing import Any
+
+from streamlit.delta_generator import DeltaGenerator
 
 from src.utils.helpers import rolling_window
 
 
-def display_filters(column, sector_data) -> dict[str, Any]:
+def display_filters(
+    column: DeltaGenerator, sector_data: dict[str, Any]
+) -> dict[str, Any]:
     """
-       Build and return UI filter selections.
+    Build and return UI filter selections for finance charts.
 
-       Parameters
-       ----------
-       column
-           Streamlit-like layout object that exposes `selectbox`, `pills`,
-           `multiselect`, and `radio`.
-       top_companies : Iterable[str]
-           Ticker symbols to populate the ticker selector.
+    Args:
+        column (DeltaGenerator): Column for streamlit elements to be stationed.
+        sector_data dict[str, Any]: Data used to populate controls 
 
-       Returns
-       -------
-       dict[str, Any]
-           {
-             "selected_ticker": str,
-             "selected_horizon": {"start": datetime, "end": datetime},
-             "selected_interval": str,
-             "selected_indicators": list[int],
-             "selected_chart_type": str,
-           }
-       """
+    Returns:
+        dict[str, Any]: Filter selections for chart generation.
+    """
     # Ticker selector
     selected_ticker = column.selectbox(
         "Select a ticker",
-        sector_data['top_companies'],
+        sector_data["top_companies"],
         help="Choose the stock or asset you want to view.",
     )
-    
+
     # Time horizon presets → arguments for rolling_window()
     horizon_mapping = {
         "1 Day": {"n": 1, "unit": "days"},  # interval = 1m
@@ -56,7 +54,6 @@ def display_filters(column, sector_data) -> dict[str, Any]:
     # DEV NOTE: The second `elif` below is unreachable because the first `if`
     # already captures unit == "days". Preserving logic as-is (no behavior change).
     # Consider refactoring to a clear decision table.
-    # i lazy fix the error here AHHHHHH
     if selected_horizon["unit"] == "days":
         data_intervals = ["1m", "2m", "5m", "15m", "30m", "1h"]
     elif selected_horizon["unit"] == "days" and selected_horizon["n"] == 5:

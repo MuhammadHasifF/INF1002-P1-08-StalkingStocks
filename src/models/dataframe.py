@@ -8,11 +8,6 @@ Notes:
     - `DataFrameModel` is used instead of `SchemaModel`, which will be deprecated.
     - In this context, the terms 'model' and 'schema' are used interchangeably to
     describe data validation structures.
-
-Classes:
-    TopPerforming: Represents dataframe schema for top performing companies.
-    TopGrowing: Represents dataframe schema for top growth companies.
-    MarketData: Represents dataframe schema for stock data.
 """
 
 from typing import TypeAlias

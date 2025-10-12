@@ -1,15 +1,10 @@
 """
 finance.py
 
-This module provides core functionalities for interacting with the yfinance API,
-including retrieving sector and industry data, obtaining top-performing companies,
-and downloading stock price data for single or multiple tickers.
+This module fetches and models financial data from yfinance, including sector/industry 
+metadata, ticker details, and validated OHLCV downloads. 
 
-It serves as the primary interface between the application and financial data sources,
-abstracting away raw API calls into convenient, reusable functions.
-
-The module is intended for data ingestion, preprocessing, and real-time querying
-of financial data to support dashboards, analytics, and reporting features.
+It provides a thin, typed interface that abstracts raw API calls into reusable functions.
 """
 
 from typing import Any, Iterable, Sequence, TypeAlias
@@ -32,7 +27,7 @@ def get_sectors() -> Sequence[str]:
 
 
 @timer
-def get_sector_data(sector_key: str) -> Sector:
+def get_sector_info(sector_key: str) -> Sector:
     """
     Returns data on a single domain sector.
 

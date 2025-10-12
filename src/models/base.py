@@ -9,11 +9,6 @@ interfacing with APIs or other data sources.
 Notes:
     - Certain information fields from yfinance classes are not available,
     to handle this, we allow NoneTypes as value replacements.
-
-Classes:
-    Industry: Represents an industry and its top performing and growing companies.
-    Sector: Represents a market sector containing multiple industries.
-    Ticker: Represents an individual stock with relevant financial attributes.
 """
 
 from typing import Any

@@ -1,20 +1,8 @@
 """
 core.py
 
-- This module provides the core functionality of the project, including
-- the main processing functions and algorithms for our application.
-
-Manual (pure Python) implementations for:
-    - Simple Moving Average (SMA)
-    - Streaks (trend runs)
-    - Daily Returns
-    - Max Profit (Best Time II rule)
-
-Extras:
-    - Helper functions for trade extraction, trades for all tickers,
-      and profit summaries (all manual).
-    - These are *not* part of the main test pipeline but can be used
-      in notebooks, Streamlit, or further analysis.
+This module provides the core functionality of the project, including
+the main processing functions and algorithms for our application.
 
 Notes:
     - All computation is done manually with Python.
@@ -30,24 +18,19 @@ from src.utils.helpers import timer
 @timer
 def compute_sma(close: pd.Series, window: int = 5) -> pd.Series:
     """
-      Simple moving average with a fixed sliding window.
+    Computes the simple moving average with sliding window.
 
-      Parameters
-      ----------
-      close : pd.Series
-          Closing prices (aligned index).
-      window : int, default 5
-          Lookback length.
+    Args:
+        close (pd.Series): Closing price
+        window (int): Window size
 
-      Returns
-      -------
-      pd.Series
-          SMA aligned to `close` (NaN until enough data).
-      """
+    Returns:
+        pd.Series: Computed SMA values based on input series.
+    """
     # RATIONALE (dev note):
     # - SMA smooths noise by averaging the last N closes (e.g., 5, 20, 50).
     # - Typical use: trend detection / denoising.
-    #
+
     # EFFICIENCY (dev note):
     # - O(n) time: single pass with a running sum (add new, drop old).
     # - O(n) space: output series; extra space is O(1).
@@ -83,23 +66,18 @@ def compute_sma(close: pd.Series, window: int = 5) -> pd.Series:
 @timer
 def compute_streak(close: pd.Series) -> tuple[int, int, pd.Series]:
     """
-       Longest up/down streaks and a daily direction mask.
+    Computes the longest up, down streaks, and a daily direction mask.
 
-       Parameters
-       ----------
-       close : pd.Series
-           Closing prices.
+    Args:
+        close (pd.Series): Closing price
 
-       Returns
-       -------
-       (int, int, pd.Series)
-           (longest_up, longest_down, trend_mask)
-           trend_mask ∈ {1 (up), 0 (flat), -1 (down)} aligned to `close`.
-       """
+    Returns:
+        tuple[int, int, pd.Series]: Longest up streak, downstreak, and mask.
+    """
     # RATIONALE (dev note):
     # - Up: Close_t > Close_{t-1}; Down: < ; Flat: == (breaks streaks).
     # - Useful for momentum diagnostics and run-length visualization.
-    #
+
     # EFFICIENCY (dev note):
     # - O(n) time; O(1) auxiliary state (mask is intended output).
     # - Single pass, minimal counters.
@@ -162,21 +140,19 @@ def compute_streak(close: pd.Series) -> tuple[int, int, pd.Series]:
 @timer
 def compute_sdr(close: pd.Series) -> pd.Series:
     """
-       Simple daily returns (percentage change).
+    Compute simple daily returns (fractional change from the previous close).
 
-       Parameters
-       ----------
-       close : pd.Series
-           Closing prices.
+    Args:
+        close (pd.Series): Series of closing prices.
 
-       Returns
-       -------
-       pd.Series
-           r_t = (P_t - P_{t-1}) / P_{t-1}; first element is None; divide-by-zero → None.
-       """
+    Returns:
+        pd.Series: Fractional daily returns computed as close.pct_change()
+            (r_t = close_t / close_{t-1} - 1); preserves the input index;
+            the first value is NaN.
+    """
     # RATIONALE (dev note):
     # - Normalizes moves for comparability; basis for volatility/risk metrics.
-    #
+
     # EFFICIENCY (dev note):
     # - O(n) time; O(n) output. Constant extra vars.
 
@@ -206,22 +182,18 @@ def compute_sdr(close: pd.Series) -> pd.Series:
 @timer
 def compute_max_profit(close: pd.Series) -> float:
     """
-    Maximum achievable profit by summing all positive day-to-day rises.
+    Computes the maximum achievable profit by summing all positive day-to-day rises.
 
-    Parameters
-    ----------
-    close : pd.Series
-        Closing prices.
+    Args:
+        close (pd.Series): Closing price
 
-    Returns
-    -------
-    float
-        Total profit from the greedy strategy.
+    Returns:
+        float: Total profit from the greedy algorithm. 
     """
     # RATIONALE (dev note):
     # - “Buy before every rise, sell after it” captures all local gains.
     # - Equivalent to summing max(0, P_{t+1} - P_t).
-    #
+
     # EFFICIENCY (dev note):
     # - O(n) time; O(1) extra space.
     # - Greedy is optimal here; no backtracking/lookahead required.
