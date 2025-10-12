@@ -1,51 +1,41 @@
 """
-ui/overview.py
+overview.py
+
 Streamlit UI renderers for sector & industry summaries and ticker charts.
 
-Main entry points
------------------
-- display_sector_overview(column, sector_data): high-level sector metrics.
-- display_industry_overview(column, industries): treemap of industry weights and daily change.
-- display_basic_price_info(ticker_info, ticker_data): headline price stats (cached).
-- display_charts(column, filters): price chart(s), indicators, and summary text.
-
-Dependencies
-------------
-- Data/services: src.services.finance (ticker/industry fetch), src.services.core (analytics).
-- Charts: src.ui.charts (Plotly builders).
-- Utils: src.utils.helpers (formatters, timer).
-- Streamlit for rendering; functions primarily produce side effects on `column`.
-
 Notes
------
 - Cached helpers (`@st.cache_data`) are used to reduce repeated API calls during interaction.
 - Expects ticker/industry dataframes with standard OHLC columns and datetime index.
 """
-import streamlit as st
 
+from typing import Any
+
+import pandas as pd
+import streamlit as st
+from streamlit.delta_generator import DeltaGenerator
+
+from src.models.base import Sector, Ticker
 from src.ui.adapters import (make_chart_inputs, make_indicator_inputs,
                              make_industry_summary_df, make_insight_input,
                              make_price_metrics, make_sector_inputs)
-from src.ui.charts import (add_indicators, create_figure, set_candlechart,
+from src.ui.charts import (create_figure, set_candlechart, set_indicators,
                            set_line_trend_chart, set_linechart, set_treemap)
 from src.utils.helpers import format_large_number, timer
 
 
 @timer
-def display_sector_overview(column) -> list[str]:
+def display_sector_overview(column: DeltaGenerator) -> Sector:
     """
-       Render the sector overview panel.
+    Displays the sector overview panel.
 
-       Parameters
-       ----------
-       column
-           Streamlit container/column used to render widgets.
-       sector_data
-           Object with `.name` and `.overview` mapping that includes
-           description, company/industry counts, employee_count, market_cap,
-           and market_weight.
+    Args:
+        column (DeltaGenerator): Column to be displayed in.
+
+    Returns:
+        Sector: Sector metadata to be passed to other components.
     """
-    sector_data, overview = make_sector_inputs(column)
+    sector_data: Sector = make_sector_inputs(column)
+    overview: dict[str, Any] = sector_data.overview
 
     column.subheader(sector_data.name)
     column.text(overview["description"])
@@ -64,54 +54,20 @@ def display_sector_overview(column) -> list[str]:
     return sector_data
 
 
-@st.cache_data
-def create_industry_overview(industries):
-    """
-       Compute a cached industry overview mapping.
-
-       Parameters
-       ----------
-       industries : Iterable[str]
-           Industry identifiers.
-
-       Returns
-       -------
-       dict
-           {formatted_industry_name: {"weight": float, "pct_change": float}}
-    """
-    # RATIONALE (dev note):
-    # - Cache industry stats to avoid repeated API calls during UI interactions.
-    # - `format_name` normalizes display names for the treemap.
-    industry_info = {}
-
-    for ind in industries:
-        info = get_industry_info(ind)
-        market_weight = info.market_weight
-        pct_change = info.pct_change  # percentage change from previous close
-        formatted_ind = format_name(ind)
-        industry_info[formatted_ind] = {
-            "weight": market_weight,
-            "pct_change": pct_change,
-        }
-
-    return industry_info
-
-
 @timer
-def display_industry_overview(column, industries: list[str]) -> None:
+def display_industry_overview(column: DeltaGenerator, industries: list[str]) -> None:
     """
-        Render the sector’s industry breakdown (treemap).
+    Render the sector’s industry breakdown (treemap).
 
-        Parameters
-        ----------
-        column
-            Streamlit container/column for rendering.
-        industries : Iterable[str]
-            Industry identifiers to summarize.
+    Args:
+        column (DeltaGenerator): Column to be displayed in.
+        industries (list[str]): List of industries
     """
     # DEV NOTE:
     # - Creates a DataFrame for Plotly treemap; color column derived from pct_change sign.
-    column.subheader("Sector Breakdown", help='A sector is comprised of multiplie industries.')
+    column.subheader(
+        "Sector Breakdown", help="A sector is comprised of multiplie industries."
+    )
     column.info(
         "This shows a sector's industry weights and how they performed today.",
         icon=":material/info:",
@@ -125,21 +81,13 @@ def display_industry_overview(column, industries: list[str]) -> None:
 
 @timer
 @st.cache_data
-def display_basic_price_info(ticker_info, ticker_data):
+def display_basic_price_info(ticker_info: Ticker, ticker_data: pd.DataFrame):
     """
-        Render top-level price metrics for the current ticker.
+    Render top-level price metrics for the current ticker.
 
-        Parameters
-        ----------
-        ticker_info
-            Object providing `price`, `long_name`, `symbol`, and `description`.
-        ticker_data : pd.DataFrame
-            OHLCV data with columns: Open, High, Low, Close (indexed by datetime).
-
-        Returns
-        -------
-        None
-            Renders Streamlit metrics directly.
+    Args:
+        ticker_info (Ticker): Object providing `price`, `long_name`, `symbol`, and `description`.
+        ticker_data (pd.DataFrame): OHLCV data with columns: Open, High, Low, Close (indexed by datetime).
     """
     metrics = make_price_metrics(ticker_info, ticker_data)
     st.metric(
@@ -154,28 +102,22 @@ def display_basic_price_info(ticker_info, ticker_data):
 
 
 @timer
-def display_charts(column, filters) -> None:
+def display_charts(column: DeltaGenerator, filters: dict[str, Any]) -> None:
     """
-        Render price chart(s), indicators, and summary stats for a ticker.
+    Render price chart(s), indicators, and summary stats for a ticker.
 
-        Parameters
-        ----------
-        column
-            Streamlit container/column for rendering.
-        filters : dict[str, Any]
-            Output from `display_filters`, including:
-            - selected_ticker: str
-            - selected_horizon: {"start": datetime, "end": datetime}
-            - selected_interval: str
-            - selected_indicators: list[int]
-            - selected_chart_type: str
-
-        Returns
-        -------
-        None
-            Renders Plotly charts and text directly.
+    Args:
+        column (DeltaGenerator): Column to be displayed in.
+        filters (dict[str, Any]): Filter selection to be used for plotting. 
     """
     inputs = make_chart_inputs(filters)
+
+    if inputs is None:
+        column.error(
+            f"Whoops, seems like data for {filters['selected_ticker']} could not be retrieved."
+        )
+        st.stop()
+
     ticker_info = inputs["ticker_info"]
     ticker_data = inputs["ticker_data"]
     up_streaks = inputs["up_streaks"]
@@ -211,7 +153,7 @@ def display_charts(column, filters) -> None:
         indicator_inputs = make_indicator_inputs(close, filters["selected_indicators"])
 
         for key, value in indicator_inputs.items():
-            fig = add_indicators(fig, value, key)
+            fig = set_indicators(fig, value, key)
 
         fig.update_layout(
             xaxis=dict(type="date", tickformat="%b %d, %Y"),
