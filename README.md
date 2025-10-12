@@ -59,7 +59,7 @@ python -m pytest -v
 
 ```bash
 .
-├── app.py                      # Main entry script for the project.
+
 ├── src/                        
 │   ├── constants/             
 │   ├── models/                
@@ -73,8 +73,3 @@ python -m pytest -v
 │    ├── test_edge_case.py
 │    └── test_models.py
 
-├── docs/
-├── notebook/
-├── README.md
-└── requirements.txt
-```
