@@ -119,6 +119,7 @@ pytest -v
 │    ├── conftest.py
 │    ├── test_core.py
 │    ├── test_finance.py
+│    ├── test_edge_cases.py
 │    └── test_models.py
 ├── docs/
 ├── notebook/
