@@ -60,13 +60,13 @@ python -m pytest -v
 ```bash
 .
 ├── app.py                      # Main entry script for the project.
-├── src/                        # Main application source code
-│   ├── constants/              # Static values and domain-specific mappings
-│   ├── models/                 # Data models and dataframe schemas
-│   ├── services/               # Business logic and data processing modules
-│   ├── ui/                     # Visualization and user interface components
-│   └── utils/                  # General-purpose helper functions
-├── tests/                      # Unit tests
+├── src/                        
+│   ├── constants/             
+│   ├── models/                
+│   ├── services/              
+│   ├── ui/                     
+│   └── utils/                  
+├── tests/                      
 │    ├── conftest.py
 │    ├── test_core.py
 │    ├── test_finance.py
