@@ -1,4 +1,4 @@
-# 📈 Stalking Stocks
+# 👁️ 📈 Stalking Stocks
 
 Beginner-friendly financial analysis—delivered via a clean, interactive Streamlit dashboard.
 
