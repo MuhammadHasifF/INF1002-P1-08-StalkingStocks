@@ -6,6 +6,9 @@ Beginner-friendly financial analysis—delivered via a clean, interactive Stream
 ![Streamlit](https://img.shields.io/badge/Streamlit-app-brightgreen)
 ![Tests](https://img.shields.io/badge/tests-pytest-informational)
 
+Hosted App:
+https://stalking-stocks.streamlit.app/
+
 ---
 
 ## Table of Contents
